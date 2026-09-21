@@ -56,16 +56,35 @@ export default async function HomePage({
   let dbEmployee = null;
   let dbQueryError: string | null = null;
 
-  if (session?.user?.id) {
+  if (session?.user) {
     try {
-      const records = await db
-        .select()
-        .from(employees)
-        .where(eq(employees.id, session.user.id))
-        .limit(1);
+      const googleSub = (session.user as any).googleSub;
+      const email = session.user.email;
+      const userId = session.user.id;
 
-      if (records.length > 0) {
-        dbEmployee = records[0];
+      // Query database flexibly by googleSub, email, or internal id
+      const conditions = [];
+      if (userId && userId.includes("-")) {
+        // Valid UUID format
+        conditions.push(eq(employees.id, userId));
+      }
+      if (googleSub) {
+        conditions.push(eq(employees.googleSub, googleSub));
+      }
+      if (email) {
+        conditions.push(eq(employees.email, email));
+      }
+
+      if (conditions.length > 0) {
+        const records = await db
+          .select()
+          .from(employees)
+          .where(conditions.length === 1 ? conditions[0] : eq(employees.email, email || ""))
+          .limit(1);
+
+        if (records.length > 0) {
+          dbEmployee = records[0];
+        }
       }
     } catch (err: any) {
       console.error("[PostgreSQL] Error querying employee record:", err);
@@ -277,7 +296,18 @@ export default async function HomePage({
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400">Đang tải thông tin bản ghi...</p>
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs space-y-2">
+                <div className="flex items-center gap-2 font-semibold text-amber-300">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Chưa tìm thấy bản ghi trong cơ sở dữ liệu PostgreSQL</span>
+                </div>
+                <p className="text-amber-200/80 leading-relaxed">
+                  Trình duyệt của bạn đang lưu cookie session cũ, nhưng PostgreSQL chưa có bản ghi khớp (hoặc <code>DATABASE_URL</code> trong <code>.env.local</code> chưa phải là connection string thật).
+                </p>
+                <div className="p-2.5 rounded bg-slate-900/60 border border-amber-500/20 font-mono text-[11px] text-slate-300">
+                  💡 <strong>Khắc phục:</strong> Cập nhật <code>DATABASE_URL</code> thật từ Neon/Supabase vào <code>.env.local</code>, chạy <code>npm run db:migrate</code>, sau đó bấm <strong>Đăng xuất</strong> và bấm <strong>Đăng nhập bằng Google</strong>.
+                </div>
+              </div>
             )}
 
             <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
