@@ -2,7 +2,7 @@
 # Track A — Real MVP Vertical Slice
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "   ENTERPRISE AI ACCESS MANAGEMENT SYSTEM — TRACK A (REAL MVP)" -ForegroundColor Cyan
+Write-Host "   ENTERPRISE AI ACCESS MANAGEMENT SYSTEM - TRACK A (REAL MVP)" -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -18,15 +18,16 @@ if ($p3000) {
 # 2. Check environment configuration
 Write-Host "[2/3] Kiem tra cau hinh bien moi truong..." -ForegroundColor Yellow
 if (-not (Test-Path ".env.local")) {
-    Write-Host "⚠️ CHUA TIM THAY .env.local! Tao ban sao tu .env.example..." -ForegroundColor Red
+    Write-Host "[CANH BAO] Chua tim thay .env.local! Dang tao ban sao tu .env.example..." -ForegroundColor Red
     Copy-Item ".env.example" ".env.local"
-    Write-Host "Vui long dien cac gia tri thuc te vao .env.local (DATABASE_URL, GOOGLE_CLIENT_ID, v.v.)" -ForegroundColor Yellow
+    Write-Host "Vui long dien cac gia tri thuc te vao .env.local" -ForegroundColor Yellow
 } else {
-    Write-Host "  ✓ Da tim thay .env.local" -ForegroundColor Green
+    Write-Host "  [OK] Da tim thay .env.local" -ForegroundColor Green
 }
 
 # 3. Start Next.js App Router (Port 3000)
-Write-Host "`n[3/3] Dang khoi dong Next.js 14 App Router (Port 3000)..." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "[3/3] Dang khoi dong Next.js 14 App Router tren cong 3000..." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "======================================================================" -ForegroundColor Green
 Write-Host "   HE THONG TRACK A DANG KHOI CHAY TREN http://localhost:3000" -ForegroundColor Green
