@@ -1,0 +1,30 @@
+{
+  "name": "@enterprise-ai/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@upstash/ratelimit": "^2.1.0",
+    "@upstash/redis": "^1.39.0",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^0.400.0",
+    "next": "^14.2.5",
+    "next-auth": "^5.0.0-beta.25",
+    "postgres": "^3.4.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5"
+  }
+}

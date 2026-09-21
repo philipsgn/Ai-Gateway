@@ -1,0 +1,89 @@
+/**
+ * Phase 9 Design Tokens: Warm Nostalgic Luxury Enterprise System
+ * Target Audience: Executive Board & Corporate Enterprise Staff
+ * Philosophy: Warm cream canvas, espresso typography, pale brass accents, hairline dividers.
+ */
+
+:root {
+  /* Color Palette - Canvas & Surfaces */
+  --color-canvas: #FAF6EE;
+  --color-canvas-alt: #F4EFE6;
+  --color-surface: #FDFBF7;
+  --color-surface-hover: #F7F2E8;
+  --color-surface-raised: #FFFFFF;
+
+  /* Typography Colors - High Contrast WCAG AA Compliant */
+  --color-text-primary: #2E2A24;    /* Warm espresso charcoal (11.8:1 contrast on canvas) */
+  --color-text-secondary: #6E675F;  /* Subdued warm stone (5.1:1 contrast) */
+  --color-text-muted: #8F877E;      /* Muted placeholder/timestamp */
+  --color-text-on-accent: #FFFFFF;
+
+  /* Accent - Warm Pale Brass / Sunlight Gold (Never neon) */
+  --color-accent: #B88E36;
+  --color-accent-hover: #A37D2E;
+  --color-accent-subtle: #F6EDD9;
+  --color-accent-border: #DFCCA4;
+
+  /* Semantic Status Palette (Subdued, Natural, No Neon) */
+  --color-success-text: #2D5A3A;     /* Deep forest moss */
+  --color-success-bg: #EEF4F0;
+  --color-success-border: #C8DDD0;
+
+  --color-warning-text: #825A1C;     /* Warm amber ochre */
+  --color-warning-bg: #FAF3E6;
+  --color-warning-border: #E8D3B0;
+
+  --color-danger-text: #8C342C;      /* Subdued terracotta rust */
+  --color-danger-bg: #FAF0EE;
+  --color-danger-border: #E7C2BE;
+
+  --color-info-text: #24415C;        /* Deep navy slate */
+  --color-info-bg: #EDF3F8;
+  --color-info-border: #C2D5E6;
+
+  /* Borders & Dividers - Hairline aesthetic */
+  --border-hairline: 1px solid #E8DFD1;
+  --border-hairline-light: 1px solid #F0E8DC;
+  --border-hairline-strong: 1px solid #D8CEBE;
+
+  /* Typography */
+  --font-serif: 'Lora', 'Source Serif Pro', Georgia, serif;
+  --font-sans: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Border Radii (Subtle, never bubbly) */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Shadows (Ultra-subtle, airy) */
+  --shadow-subtle: 0 1px 3px rgba(46, 42, 36, 0.04), 0 1px 2px rgba(46, 42, 36, 0.02);
+  --shadow-dropdown: 0 4px 12px rgba(46, 42, 36, 0.08);
+  --shadow-modal: 0 16px 32px rgba(46, 42, 36, 0.12), 0 2px 6px rgba(46, 42, 36, 0.06);
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, .font-serif {
+  font-family: var(--font-serif);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Hairline utility */
+.hairline-b {
+  border-bottom: var(--border-hairline);
+}
+.hairline-t {
+  border-top: var(--border-hairline);
+}
+.hairline-all {
+  border: var(--border-hairline);
+}

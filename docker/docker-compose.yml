@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Redis 7 for Distributed Lease Mutex, Pub/Sub, and Token Blacklist
+  redis:
+    image: redis:7.2-alpine
+    container_name: enterprise_ai_redis
+    command: redis-server --appendonly yes --requirepass spike_redis_secret
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "spike_redis_secret", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # PostgreSQL 16 for IAM, Account Registry, Audit Logs
+  postgres:
+    image: postgres:16-alpine
+    container_name: enterprise_ai_postgres
+    environment:
+      POSTGRES_USER: enterprise_admin
+      POSTGRES_PASSWORD: enterprise_secure_password
+      POSTGRES_DB: enterprise_ai_access_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enterprise_admin -d enterprise_ai_access_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # HashiCorp Vault in development mode for Secret Storage Spike
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: enterprise_ai_vault
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "root-token-phase0-spike"
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+
+volumes:
+  redis_data:
+  postgres_data:
