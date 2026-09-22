@@ -111,3 +111,4 @@ Mở rộng thêm bảng (`AIAccount`, `SecretStore`...) chỉ khi có tích h�
 
 - [README.md](./README.md)
 - [PHASE-0-IMPLEMENTATION-REPORT.md](./docs/reports/PHASE-0-IMPLEMENTATION-REPORT.md)  
+- [PHASE-1-IMPLEMENTATION-REPORT.md](./docs/reports/PHASE-1-IMPLEMENTATION-REPORT.md)
