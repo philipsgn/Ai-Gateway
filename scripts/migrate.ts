@@ -81,10 +81,26 @@ async function runMigration() {
     `);
     console.log("  ✓ Table 'audit_logs' verified / created.");
 
-    // 4. Create indexes
+    // 4. Create grants table
+    await sql.unsafe(`
+      CREATE TABLE IF NOT EXISTS grants (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        resource_name VARCHAR(255) NOT NULL,
+        granted_by UUID NOT NULL REFERENCES employees(id),
+        status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        expires_at TIMESTAMPTZ
+      );
+    `);
+    console.log("  ✓ Table 'grants' verified / created.");
+
+    // 5. Create indexes
     await sql.unsafe(`
       CREATE INDEX IF NOT EXISTS idx_employees_google_sub ON employees(google_sub);
       CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_grants_employee_id ON grants(employee_id);
+      CREATE INDEX IF NOT EXISTS idx_grants_status ON grants(status);
     `);
     console.log("  ✓ Indexes verified / created.");
 

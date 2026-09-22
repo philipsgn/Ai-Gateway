@@ -4,11 +4,12 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, signIn, signOut } from "@/auth";
-import { db, employees } from "@/db";
-import { eq } from "drizzle-orm";
+import { db, employees, grants } from "@/db";
+import { eq, and, desc } from "drizzle-orm";
 import { checkLoginRateLimit } from "@/lib/redis";
 import {
   ShieldCheck,
+  ShieldAlert,
   Database,
   Lock,
   ArrowRight,
@@ -20,6 +21,9 @@ import {
   KeyRound,
   Calendar,
   AlertCircle,
+  Sparkles,
+  Layers,
+  ExternalLink,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -92,6 +96,20 @@ export default async function HomePage({
     }
   }
 
+  // If employee record is found, query their active AI grants
+  let userGrants: (typeof grants.$inferSelect)[] = [];
+  if (dbEmployee?.id) {
+    try {
+      userGrants = await db
+        .select()
+        .from(grants)
+        .where(and(eq(grants.employeeId, dbEmployee.id), eq(grants.status, "ACTIVE")))
+        .orderBy(desc(grants.createdAt));
+    } catch (err: any) {
+      console.error("[PostgreSQL] Error querying employee grants:", err);
+    }
+  }
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Error alert if rate-limited or error param */}
@@ -116,7 +134,7 @@ export default async function HomePage({
             <div className="max-w-2xl space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Phase 17 • Track A (MVP Real Auth Slice)
+                Phase 1 • Real Auth & AI Access Matrix
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
@@ -124,7 +142,7 @@ export default async function HomePage({
               </h1>
 
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                Vertical slice xác thực thật 100%: Đăng nhập bằng Google OAuth 2.0 thật, lưu trữ và upsert định danh vào PostgreSQL thật, kiểm toán vào bảng AuditLog, bảo vệ tần suất bằng Upstash Redis thật.
+                Nền tảng quản lý phân quyền và cổng truy cập AI doanh nghiệp: Đăng nhập Google OAuth 2.0 thật, phân biệt Root Admin vs Nhân viên thật, cấp và thu hồi quyền AI (ChatGPT, Claude, Gemini, Cursor) với Audit Log thời gian thực.
               </p>
 
               {/* Login Form */}
@@ -256,6 +274,88 @@ export default async function HomePage({
                 </form>
               </div>
             </div>
+          </div>
+
+          {/* Root Admin Management Callout */}
+          {dbEmployee?.role === "ROOT_ADMIN" && (
+            <div className="glass-panel p-5 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-slate-900 to-indigo-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-white">Bạn đang đăng nhập với quyền Root Administrator</h3>
+                  <p className="text-xs text-slate-300">
+                    Bạn có toàn quyền truy cập Cổng Quản Trị để cấp phát và thu hồi quyền dịch vụ AI cho tất cả nhân viên.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/admin"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-1.5 transition-colors shadow-lg shadow-amber-500/10 shrink-0 font-medium"
+              >
+                <span>Mở Admin Portal</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
+          {/* Employee's Active AI Grants */}
+          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-400" />
+                Dịch vụ AI được cấp quyền sử dụng (Active Grants)
+              </h2>
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                {userGrants.length} dịch vụ đang kích hoạt
+              </span>
+            </div>
+
+            {userGrants.length === 0 ? (
+              <div className="p-6 rounded-xl bg-slate-900/40 border border-slate-800 text-center space-y-2">
+                <p className="text-slate-300 text-sm font-medium">
+                  Chưa có quyền dịch vụ AI nào được cấp cho tài khoản này
+                </p>
+                <p className="text-slate-500 text-xs max-w-md mx-auto">
+                  Vui lòng liên hệ Quản trị viên (Root Administrator) để được cấp quyền truy cập các công cụ như ChatGPT Team, Claude Pro, Gemini Advanced hoặc Cursor.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {userGrants.map((grant) => (
+                  <div
+                    key={grant.id}
+                    className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <h3 className="font-semibold text-sm text-slate-100">{grant.resourceName}</h3>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          Cấp bởi: {grant.grantedBy}
+                        </p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        ACTIVE
+                      </span>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                      <span>
+                        Hạn:{" "}
+                        {grant.expiresAt
+                          ? new Date(grant.expiresAt).toLocaleDateString("vi-VN")
+                          : "Vô thời hạn"}
+                      </span>
+                      <span className="text-indigo-400 font-medium">Sẵn sàng sử dụng</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Database Identity Details */}

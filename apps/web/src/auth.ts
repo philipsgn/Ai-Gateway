@@ -26,6 +26,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return false;
         }
 
+        const rootAdminEmail = process.env.ROOT_ADMIN_EMAIL?.toLowerCase().trim();
+        const isRootAdmin = !!(rootAdminEmail && email.toLowerCase().trim() === rootAdminEmail);
+        const assignedRole = isRootAdmin ? "ROOT_ADMIN" : "EMPLOYEE";
+
         try {
           // Upsert Employee into PostgreSQL based on google_sub
           const [employee] = await db
@@ -35,7 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email,
               name,
               avatarUrl,
-              role: "EMPLOYEE",
+              role: assignedRole,
             })
             .onConflictDoUpdate({
               target: employees.googleSub,
@@ -43,6 +47,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 email,
                 name,
                 avatarUrl,
+                ...(isRootAdmin ? { role: "ROOT_ADMIN" } : {}),
               },
             })
             .returning();
@@ -50,16 +55,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Append-only AuditLog record
           await db.insert(auditLogs).values({
             actorId: employee.id,
-            action: "EMPLOYEE_LOGIN",
+            action: employee.role === "ROOT_ADMIN" ? "ROOT_ADMIN_LOGIN" : "EMPLOYEE_LOGIN",
             targetId: employee.id,
             metadata: {
               method: "google_oauth",
               email: employee.email,
+              role: employee.role,
             },
           });
 
-          // Attach database employee id to user object
+          // Attach database employee id and role to user object
           user.id = employee.id;
+          (user as any).role = employee.role;
           return true;
         } catch (error) {
           console.error("[Auth] Error upserting employee or recording audit log:", error);
@@ -75,6 +82,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user?.id) {
         token.employeeId = user.id;
       }
+      if ((user as any)?.role) {
+        token.role = (user as any).role;
+      }
+      // Fail-safe check for ROOT_ADMIN_EMAIL in jwt callback
+      const rootAdminEmail = process.env.ROOT_ADMIN_EMAIL?.toLowerCase().trim();
+      if (rootAdminEmail && token.email && token.email.toLowerCase().trim() === rootAdminEmail) {
+        token.role = "ROOT_ADMIN";
+      }
       return token;
     },
     async session({ session, token }) {
@@ -83,6 +98,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           session.user.id = token.employeeId as string;
         }
         (session.user as any).googleSub = token.googleSub as string;
+        (session.user as any).role = (token.role as string) || "EMPLOYEE";
       }
       return session;
     },
