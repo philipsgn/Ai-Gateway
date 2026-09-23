@@ -54,7 +54,20 @@ async function runMigration() {
     // 1. Ensure pgcrypto extension for gen_random_uuid if on older Postgres
     await sql.unsafe(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
 
-    // 2. Create employees table
+    // 2. Create departments table
+    await sql.unsafe(`
+      CREATE TABLE IF NOT EXISTS departments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(100) NOT NULL UNIQUE,
+        code VARCHAR(50) NOT NULL UNIQUE,
+        monthly_budget_usd NUMERIC(10, 2) NOT NULL DEFAULT 500.00,
+        currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log("  ✓ Table 'departments' verified / created.");
+
+    // 3. Create employees table
     await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS employees (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,10 +78,12 @@ async function runMigration() {
         role VARCHAR(50) NOT NULL DEFAULT 'EMPLOYEE',
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
-    `);
-    console.log("  ✓ Table 'employees' verified / created.");
 
-    // 3. Create audit_logs table
+      ALTER TABLE employees ADD COLUMN IF NOT EXISTS department_id UUID REFERENCES departments(id) ON DELETE SET NULL;
+    `);
+    console.log("  ✓ Table 'employees' verified / created (with department_id).");
+
+    // 4. Create audit_logs table
     await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS audit_logs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,7 +96,7 @@ async function runMigration() {
     `);
     console.log("  ✓ Table 'audit_logs' verified / created.");
 
-    // 4. Create grants table
+    // 5. Create grants table
     await sql.unsafe(`
       CREATE TABLE IF NOT EXISTS grants (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -100,9 +115,11 @@ async function runMigration() {
     `);
     console.log("  ✓ Table 'grants' verified / created (with access_count & last_accessed_at).");
 
-    // 5. Create indexes
+    // 6. Create indexes
     await sql.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_departments_code ON departments(code);
       CREATE INDEX IF NOT EXISTS idx_employees_google_sub ON employees(google_sub);
+      CREATE INDEX IF NOT EXISTS idx_employees_department_id ON employees(department_id);
       CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_grants_employee_id ON grants(employee_id);
       CREATE INDEX IF NOT EXISTS idx_grants_status ON grants(status);

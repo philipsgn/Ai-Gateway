@@ -1,41 +1,33 @@
-# Task Tracking: Phase 2 — Service Launch & Direct Access Portal
+# Task Tracking: Phase 3 — Department Budget & Quota Governance
 
-Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 2, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
+Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 3, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
 
 ---
 
-## Nhóm 1: Cơ Sở Dữ Liệu & Đo Lường Sử Dụng (Data & Schema)
-- [x] Cập nhật schema Drizzle bảng `grants` thêm `accessCount` và `lastAccessedAt` (`apps/web/src/db/schema.ts`)
-- [x] Cập nhật migration script `scripts/migrate.ts` thêm lệnh `ALTER TABLE grants ADD COLUMN IF NOT EXISTS ...`
-- [x] Thực thi `npm run db:migrate` áp dụng cột mới lên Neon PostgreSQL thật
-- [x] Cập nhật script kiểm tra `scripts/verify-db.ts` hiển thị thông tin đo lường lượt dùng
+## Nhóm 1: Cơ Sở Dữ Liệu Phòng Ban & Migration (Data & Schema)
+- [x] Định nghĩa schema Drizzle bảng `departments` và thêm `departmentId` vào `employees` (`apps/web/src/db/schema.ts`)
+- [x] Cập nhật migration script `scripts/migrate.ts` tạo bảng `departments` và cột `department_id` trong `employees`
+- [x] Thực thi `npm run db:migrate` áp dụng lên Neon PostgreSQL thật
+- [x] Cập nhật script `scripts/verify-db.ts` hỗ trợ xác thực bảng departments
 
-## Nhóm 2: Launch Gateway & Kiểm Soát An Toàn (Security & Launch Gateway)
-- [x] Định nghĩa bảng ánh xạ tài nguyên AI chuẩn (`resourceCatalog`) với URL chính thức, icon và danh mục
-- [x] Xây dựng Server Action hoặc Route Handler khởi chạy an toàn:
-  - Kiểm tra xác thực phiên đăng nhập
-  - Kiểm tra quyền sở hữu grant
-  - Kiểm tra trạng thái `ACTIVE` và hạn sử dụng
-  - Cập nhật `access_count` và `last_accessed_at`
-  - Ghi nhận nhật ký kiểm toán `AI_SERVICE_LAUNCHED`
-  - Chuyển hướng an toàn (Safe Redirect) đến URL dịch vụ AI
+## Nhóm 2: Đơn Giá Dịch Vụ & Budget Governance Engine (Cost Calculation & Quota)
+- [ ] Cập nhật `apps/web/src/lib/catalog.ts` bổ sung `costPerLaunch` cho từng công cụ AI
+- [ ] Xây dựng module tính toán ngân sách `apps/web/src/lib/budget.ts` tính toán chi tiêu, % sử dụng và trạng thái ngưỡng (`NORMAL`, `WARNING`, `EXCEEDED`)
+- [ ] Cập nhật Launch Gateway `/api/launch/[grantId]` ghi audit log `BUDGET_THRESHOLD_ALERT` khi phòng ban đạt ngưỡng cảnh báo
 
-## Nhóm 3: Giao Diện AI Launcher Hub Cho Nhân Viên (UI & UX)
-- [x] Nâng cấp thẻ dịch vụ AI trên trang chủ `/` thành thẻ tương tác hiện đại:
-  - Hiển thị icon nhận diện chính thức
-  - Hiển thị danh mục (Coding, Writing, Chat, Design)
-  - Hiển thị số lượt đã truy cập và hạn dùng
-  - Nút bấm "Khởi chạy dịch vụ" kích hoạt trực tiếp Launch Gateway
-- [x] Xây dựng trạng thái xử lý khi không có quyền hoặc quyền đã hết hạn (grant_revoked, grant_expired, forbidden, grant_not_found)
+## Nhóm 3: Giao Diện Quản Trị Phòng Ban & Ngân Sách (Admin Portal Management)
+- [ ] Mở rộng giao diện `/admin`:
+  - Thêm thẻ thống kê ngân sách tổng quan
+  - Thêm biểu mẫu Tạo phòng ban mới (`handleCreateDepartment`)
+  - Thêm chức năng Gán phòng ban cho nhân viên (`handleAssignDepartment`)
+  - Thêm bảng chi tiết Quản lý ngân sách phòng ban kèm Progress Bar trực quan và cảnh báo màu sắc
 
-## Nhóm 4: Bảng Giám Sát Mức Độ Sử Dụng Cho Admin (Admin Portal Analytics)
-- [x] Cập nhật bảng quản lý phân quyền tại `/admin`: Bổ sung hiển thị `Lượt dùng` (`accessCount`) và `Truy cập gần nhất` (`lastAccessedAt`)
-- [x] Thêm chỉ số tổng quan trên Admin Dashboard: Tổng số lượt khởi chạy AI toàn doanh nghiệp (card thứ 4 với icon Sparkles)
+## Nhóm 4: Giao Diện Phía Nhân Viên (Employee UI Visibility)
+- [ ] Cập nhật trang chủ `/`: Hiển thị phòng ban trực thuộc và thanh tiến trình ngân sách AI của bộ phận
+- [ ] Cảnh báo trạng thái ngân sách phòng ban trên thẻ khởi chạy công cụ AI
 
 ## Nhóm 5: Kiểm Chứng & Nghiệm Thu Thực Tế (Verification)
-- [x] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint
-- [x] Chạy kiểm tra rà soát `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả
-- [x] Kiểm chứng thực tế:
-  - Route Handler `/api/launch/[grantId]` xác thực người dùng, từ chối không có token (HTTP 307 -> `/?error=unauthorized`)
-  - Xác nhận trong cơ sở dữ liệu Neon PostgreSQL: `access_count` tăng lên 1, `last_accessed_at` được cập nhật, và 1 dòng `AI_SERVICE_LAUNCHED` xuất hiện trong `audit_logs`
-  - Đăng nhập Root Admin quản lý và kiểm tra trực quan trên Dashboard `/` và `/admin`
+- [ ] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint
+- [ ] Chạy kiểm tra rà soát `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả
+- [ ] Tạo phòng ban mẫu (`Engineering`, `Marketing`), gán nhân viên vào phòng ban trên Neon PostgreSQL
+- [ ] Khởi chạy công cụ AI, xác nhận chi phí phòng ban tăng lên tương ứng và audit log được lưu vết

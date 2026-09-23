@@ -31,17 +31,24 @@ async function verify() {
   });
 
   try {
+    const departmentsCount = await sql`SELECT count(*) FROM departments;`;
     const employeesCount = await sql`SELECT count(*) FROM employees;`;
     const grantsCount = await sql`SELECT count(*) FROM grants;`;
     const auditLogsCount = await sql`SELECT count(*) FROM audit_logs;`;
 
     console.log("=== NEON POSTGRESQL REAL VERIFICATION ===");
+    console.log("Departments Count:", departmentsCount[0].count);
     console.log("Employees Count:", employeesCount[0].count);
     console.log("Grants Count:", grantsCount[0].count);
     console.log("Audit Logs Count:", auditLogsCount[0].count);
 
+    if (parseInt(departmentsCount[0].count, 10) > 0) {
+      const depts = await sql`SELECT id, name, code, monthly_budget_usd, currency FROM departments LIMIT 5;`;
+      console.log("\nRegistered Departments:", depts);
+    }
+
     if (parseInt(employeesCount[0].count, 10) > 0) {
-      const emps = await sql`SELECT id, email, role, created_at FROM employees LIMIT 5;`;
+      const emps = await sql`SELECT id, email, role, department_id, created_at FROM employees LIMIT 5;`;
       console.log("\nRegistered Employees:", emps);
     }
 

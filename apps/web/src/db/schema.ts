@@ -1,4 +1,13 @@
-import { pgTable, uuid, varchar, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, jsonb, integer, numeric } from "drizzle-orm/pg-core";
+
+export const departments = pgTable("departments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  monthlyBudgetUsd: numeric("monthly_budget_usd", { precision: 10, scale: 2 }).notNull().default("500.00"),
+  currency: varchar("currency", { length: 10 }).notNull().default("USD"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const employees = pgTable("employees", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -7,6 +16,7 @@ export const employees = pgTable("employees", {
   name: varchar("name", { length: 255 }),
   avatarUrl: text("avatar_url"),
   role: varchar("role", { length: 50 }).notNull().default("EMPLOYEE"),
+  departmentId: uuid("department_id").references(() => departments.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -31,9 +41,12 @@ export const grants = pgTable("grants", {
   expiresAt: timestamp("expires_at", { withTimezone: true }),
 });
 
+export type Department = typeof departments.$inferSelect;
+export type NewDepartment = typeof departments.$inferInsert;
 export type Employee = typeof employees.$inferSelect;
 export type NewEmployee = typeof employees.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type Grant = typeof grants.$inferSelect;
 export type NewGrant = typeof grants.$inferInsert;
+
