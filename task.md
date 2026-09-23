@@ -16,11 +16,12 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 3, bám sát 100% phâ
 - [x] Cập nhật Launch Gateway `/api/launch/[grantId]` ghi audit log `BUDGET_THRESHOLD_ALERT` khi phòng ban đạt ngưỡng cảnh báo
 
 ## Nhóm 3: Giao Diện Quản Trị Phòng Ban & Ngân Sách (Admin Portal Management)
-- [ ] Mở rộng giao diện `/admin`:
-  - Thêm thẻ thống kê ngân sách tổng quan
+- [x] Mở rộng giao diện `/admin`:
+  - Thêm thẻ thống kê ngân sách tổng quan (Tổng ngân sách, Chi phí đã dùng, Số phòng ban cảnh báo)
   - Thêm biểu mẫu Tạo phòng ban mới (`handleCreateDepartment`)
   - Thêm chức năng Gán phòng ban cho nhân viên (`handleAssignDepartment`)
-  - Thêm bảng chi tiết Quản lý ngân sách phòng ban kèm Progress Bar trực quan và cảnh báo màu sắc
+  - Thêm bảng chi tiết Quản lý ngân sách phòng ban kèm Progress Bar trực quan và cảnh báo màu sắc (Normal / Warning / Exceeded)
+  - Bổ sung hiển thị thông tin Phòng ban trong danh bạ nhân viên Registered Employees
 
 ## Nhóm 4: Giao Diện Phía Nhân Viên (Employee UI Visibility)
 - [ ] Cập nhật trang chủ `/`: Hiển thị phòng ban trực thuộc và thanh tiến trình ngân sách AI của bộ phận

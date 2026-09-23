@@ -61,7 +61,7 @@ export async function getDepartmentBudgetStats(
     .from(employees)
     .where(eq(employees.departmentId, dept.id));
 
-  const employeeIds = deptEmployees.map((e) => e.id);
+  const employeeIds = deptEmployees.map((e: { id: string }) => e.id);
   const employeeCount = employeeIds.length;
 
   if (employeeCount === 0) {

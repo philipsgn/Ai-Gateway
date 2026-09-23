@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { db, employees, grants, auditLogs } from "@/db";
+import { db, employees, grants, auditLogs, departments } from "@/db";
 import { desc, eq } from "drizzle-orm";
 import {
   ShieldAlert,
@@ -20,7 +20,12 @@ import {
   Layers,
   ArrowLeft,
   Sparkles,
+  Building2,
+  DollarSign,
+  TrendingUp,
+  UserPlus,
 } from "lucide-react";
+import { getAllDepartmentsBudgetStats, DepartmentBudgetSummary } from "@/lib/budget";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +71,79 @@ export default async function AdminPortalPage() {
         </div>
       </div>
     );
+  }
+
+  // Server Action: Create Department
+  async function handleCreateDepartment(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (currentSession?.user?.role !== "ROOT_ADMIN") {
+      throw new Error("Unauthorized: Only Root Admin can create departments");
+    }
+
+    const name = (formData.get("name") as string)?.trim();
+    const code = (formData.get("code") as string)?.trim().toUpperCase();
+    const monthlyBudgetUsd = (formData.get("monthlyBudgetUsd") as string)?.trim() || "500.00";
+
+    if (!name || !code) return;
+
+    const [dept] = await db
+      .insert(departments)
+      .values({
+        name,
+        code,
+        monthlyBudgetUsd,
+      })
+      .returning();
+
+    await db.insert(auditLogs).values({
+      actorId: currentSession.user.id,
+      action: "DEPARTMENT_CREATED",
+      targetId: dept.id,
+      metadata: {
+        departmentName: dept.name,
+        departmentCode: dept.code,
+        monthlyBudgetUsd: dept.monthlyBudgetUsd,
+        createdBy: currentSession.user.email,
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  }
+
+  // Server Action: Assign Employee to Department
+  async function handleAssignDepartment(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (currentSession?.user?.role !== "ROOT_ADMIN") {
+      throw new Error("Unauthorized: Only Root Admin can assign departments");
+    }
+
+    const employeeId = formData.get("employeeId") as string;
+    const departmentId = (formData.get("departmentId") as string) || null;
+
+    if (!employeeId) return;
+
+    await db
+      .update(employees)
+      .set({
+        departmentId: departmentId === "NONE" ? null : departmentId,
+      })
+      .where(eq(employees.id, employeeId));
+
+    await db.insert(auditLogs).values({
+      actorId: currentSession.user.id,
+      action: "DEPARTMENT_ASSIGNED",
+      targetId: employeeId,
+      metadata: {
+        assignedDepartmentId: departmentId,
+        updatedBy: currentSession.user.email,
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
   }
 
   // Server Action: Issue New AI Grant
@@ -153,10 +231,14 @@ export default async function AdminPortalPage() {
   // Fetch real data directly from PostgreSQL
   let allEmployees: (typeof employees.$inferSelect)[] = [];
   let allGrantsList: any[] = [];
+  let allDepartments: (typeof departments.$inferSelect)[] = [];
+  let departmentBudgetSummaries: DepartmentBudgetSummary[] = [];
   let fetchError: string | null = null;
 
   try {
     allEmployees = await db.select().from(employees).orderBy(desc(employees.createdAt));
+    allDepartments = await db.select().from(departments).orderBy(departments.name);
+    departmentBudgetSummaries = await getAllDepartmentsBudgetStats();
     
     // Query grants joined with employee details including usage tracking metrics
     allGrantsList = await db
@@ -173,6 +255,7 @@ export default async function AdminPortalPage() {
         employeeName: employees.name,
         employeeEmail: employees.email,
         employeeAvatar: employees.avatarUrl,
+        employeeDeptId: employees.departmentId,
       })
       .from(grants)
       .leftJoin(employees, eq(grants.employeeId, employees.id))
@@ -185,6 +268,11 @@ export default async function AdminPortalPage() {
   const activeGrantsCount = allGrantsList.filter((g) => g.status === "ACTIVE").length;
   const revokedGrantsCount = allGrantsList.filter((g) => g.status === "REVOKED").length;
   const totalLaunchesCount = allGrantsList.reduce((acc, g) => acc + (Number(g.accessCount) || 0), 0);
+
+  // Budget calculations across all departments
+  const totalCompanyBudgetUsd = departmentBudgetSummaries.reduce((acc, d) => acc + d.monthlyBudgetUsd, 0);
+  const totalCompanySpentUsd = departmentBudgetSummaries.reduce((acc, d) => acc + d.spentUsd, 0);
+  const alertDeptsCount = departmentBudgetSummaries.filter((d) => d.status === "WARNING" || d.status === "EXCEEDED").length;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -215,7 +303,7 @@ export default async function AdminPortalPage() {
           </div>
         </div>
 
-        {/* Quick Stats Grid with Total AI Launches */}
+        {/* Quick Stats Grid with Total AI Launches and Budget Governance */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
           <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
@@ -238,16 +326,6 @@ export default async function AdminPortalPage() {
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center shrink-0">
-              <XCircle className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-400 font-medium">Đã thu hồi</p>
-              <p className="text-lg font-bold text-slate-300 mt-0.5">{revokedGrantsCount}</p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
@@ -255,6 +333,40 @@ export default async function AdminPortalPage() {
               <p className="text-[11px] text-slate-400 font-medium">Lượt khởi chạy AI</p>
               <p className="text-lg font-bold text-amber-300 mt-0.5">{totalLaunchesCount}</p>
             </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+              <DollarSign className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400 font-medium">Chi phí AI đã dùng</p>
+              <p className="text-lg font-bold text-cyan-300 mt-0.5">${totalCompanySpentUsd.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Company Budget Secondary Summary Banner */}
+        <div className="mt-4 p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-300 gap-3">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-indigo-400" />
+            <span>Tổng ngân sách AI: <strong className="text-white">${totalCompanyBudgetUsd.toFixed(2)}</strong></span>
+            <span className="text-slate-500">|</span>
+            <span>{allDepartments.length} phòng ban</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {alertDeptsCount > 0 ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                {alertDeptsCount} phòng ban chạm ngưỡng cảnh báo / vượt trần
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Mọi phòng ban trong giới hạn ngân sách
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -264,6 +376,220 @@ export default async function AdminPortalPage() {
           Lỗi truy vấn cơ sở dữ liệu: {fetchError}
         </div>
       )}
+
+      {/* ==================== SECTION: DEPARTMENT & BUDGET GOVERNANCE ==================== */}
+      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Quản Trị Ngân Sách & Phòng Ban (Department & Quota Governance)</h2>
+              <p className="text-xs text-slate-400">Thiết lập trần chi phí AI tháng theo bộ phận, phân bổ nhân sự và giám sát định mức chi tiêu</p>
+            </div>
+          </div>
+          <span className="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-lg border border-cyan-500/20">
+            {allDepartments.length} phòng ban
+          </span>
+        </div>
+
+        {/* 2 Forms: Create Dept & Assign Employee */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          {/* Form 1: Create Department */}
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <PlusCircle className="w-4 h-4 text-cyan-400" />
+              Tạo Phòng Ban Mới
+            </h3>
+            <form action={handleCreateDepartment} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">Tên phòng ban</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  placeholder="Kỹ thuật phần mềm (Engineering)"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Mã code</label>
+                  <input
+                    type="text"
+                    name="code"
+                    required
+                    placeholder="ENG"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 uppercase focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Ngân sách tháng ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="monthlyBudgetUsd"
+                    required
+                    defaultValue="500.00"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all shadow-md shadow-cyan-600/20 active:scale-[0.98]"
+              >
+                Tạo Phòng Ban
+              </button>
+            </form>
+          </div>
+
+          {/* Form 2: Assign Employee to Department */}
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-indigo-400" />
+              Phân Bổ Nhân Viên Vào Phòng Ban
+            </h3>
+            {allDepartments.length === 0 ? (
+              <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                Chưa có phòng ban nào. Hãy tạo phòng ban trước.
+              </div>
+            ) : (
+              <form action={handleAssignDepartment} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Chọn nhân viên</label>
+                  <select
+                    name="employeeId"
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="">-- Chọn nhân viên --</option>
+                    {allEmployees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name || emp.email} ({emp.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Gán vào phòng ban</label>
+                  <select
+                    name="departmentId"
+                    required
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="NONE">-- Không trực thuộc (Bỏ gán) --</option>
+                    {allDepartments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name} [{dept.code}] - Hạn mức: ${dept.monthlyBudgetUsd}/tháng
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-600/20 active:scale-[0.98]"
+                >
+                  Cập Nhật Phân Bổ
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Table: Department Budget & Quota Tracking */}
+        {departmentBudgetSummaries.length > 0 && (
+          <div className="pt-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+              Theo Dõi Mức Tiêu Thụ Ngân Sách Từng Phòng Ban
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[11px]">
+                  <tr>
+                    <th className="py-3 px-4">Phòng ban</th>
+                    <th className="py-3 px-4">Nhân sự</th>
+                    <th className="py-3 px-4">Ngân sách tháng</th>
+                    <th className="py-3 px-4">Đã dùng ($)</th>
+                    <th className="py-3 px-4">Còn lại ($)</th>
+                    <th className="py-3 px-4">Tiến độ tiêu thụ</th>
+                    <th className="py-3 px-4">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-sans">
+                  {departmentBudgetSummaries.map((dept) => {
+                    const isExceeded = dept.status === "EXCEEDED";
+                    const isWarning = dept.status === "WARNING";
+                    const barColor = isExceeded ? "bg-rose-500" : isWarning ? "bg-amber-400" : "bg-emerald-400";
+                    return (
+                      <tr key={dept.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-slate-100 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                            {dept.name}
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-500">Mã: {dept.code}</span>
+                        </td>
+
+                        <td className="py-3 px-4 font-mono">
+                          {dept.employeeCount} nhân viên
+                        </td>
+
+                        <td className="py-3 px-4 font-mono font-medium text-slate-200">
+                          ${dept.monthlyBudgetUsd.toFixed(2)}
+                        </td>
+
+                        <td className="py-3 px-4 font-mono font-bold text-amber-300">
+                          ${dept.spentUsd.toFixed(2)}
+                        </td>
+
+                        <td className="py-3 px-4 font-mono text-emerald-300">
+                          ${dept.remainingUsd.toFixed(2)}
+                        </td>
+
+                        <td className="py-3 px-4 w-48">
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] font-mono">
+                              <span>{dept.percentageUsed}%</span>
+                              <span className="text-slate-500">{dept.totalLaunches} lượt</span>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                              <div
+                                className={`h-full ${barColor} transition-all duration-500`}
+                                style={{ width: `${Math.min(100, dept.percentageUsed)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-4">
+                          {isExceeded ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                              <AlertTriangle className="w-3 h-3 text-rose-400" />
+                              VƯỢT HẠN MỨC
+                            </span>
+                          ) : isWarning ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                              <AlertTriangle className="w-3 h-3 text-amber-400" />
+                              CẢNH BÁO TIỆM CẬN
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              <CheckCircle2 className="w-3 h-3" />
+                              AN TOÀN
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Form: Issue New AI Grant */}
       <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
@@ -509,6 +835,7 @@ export default async function AdminPortalPage() {
             <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[11px]">
               <tr>
                 <th className="py-3 px-4">Nhân viên</th>
+                <th className="py-3 px-4">Phòng ban</th>
                 <th className="py-3 px-4">Vai trò (Role)</th>
                 <th className="py-3 px-4">Google Subject ID (Sub)</th>
                 <th className="py-3 px-4">Internal ID (UUID)</th>
@@ -516,27 +843,40 @@ export default async function AdminPortalPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-sans">
-              {allEmployees.map((emp) => (
-                <tr key={emp.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      {emp.avatarUrl ? (
-                        <img
-                          src={emp.avatarUrl}
-                          alt=""
-                          className="w-7 h-7 rounded-full object-cover ring-1 ring-slate-700"
-                        />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-300 font-bold">
-                          {(emp.name || emp.email || "U")[0].toUpperCase()}
+              {allEmployees.map((emp) => {
+                const empDept = allDepartments.find((d) => d.id === emp.departmentId);
+                return (
+                  <tr key={emp.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        {emp.avatarUrl ? (
+                          <img
+                            src={emp.avatarUrl}
+                            alt=""
+                            className="w-7 h-7 rounded-full object-cover ring-1 ring-slate-700"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-300 font-bold">
+                            {(emp.name || emp.email || "U")[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-slate-100">{emp.name || "Chưa có tên"}</p>
+                          <p className="text-[11px] text-slate-400 font-mono">{emp.email}</p>
                         </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-slate-100">{emp.name || "Chưa có tên"}</p>
-                        <p className="text-[11px] text-slate-400 font-mono">{emp.email}</p>
                       </div>
-                    </div>
-                  </td>
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      {empDept ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                          <Building2 className="w-3 h-3 text-cyan-400" />
+                          {empDept.name} ({empDept.code})
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-500 italic">Chưa phân bổ</span>
+                      )}
+                    </td>
 
                   <td className="py-3.5 px-4">
                     {emp.role === "ROOT_ADMIN" ? (
@@ -564,8 +904,9 @@ export default async function AdminPortalPage() {
                     {emp.createdAt ? new Date(emp.createdAt).toLocaleString("vi-VN") : "N/A"}
                   </td>
                 </tr>
-              ))}
-            </tbody>
+              );
+            })}
+          </tbody>
           </table>
         </div>
       </div>
