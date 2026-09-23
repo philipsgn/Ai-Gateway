@@ -28,7 +28,7 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 4, bám sát 100% phâ
 - [x] Xử lý thông báo lỗi người dùng khi phòng ban hoặc công cụ hết slot truy cập đồng thời (`concurrency_limit_exceeded`)
 
 ## Nhóm 5: Kiểm Chứng Toàn Diện & Nghiệm Thu Dữ Liệu Thật (Verification)
-- [ ] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả
-- [ ] Viết và chạy script xác thực `scripts/test-phase4-vault.ts` thao tác trực tiếp trên Neon PostgreSQL & Upstash Redis
-- [ ] Chạy `npx turbo build` kiểm tra type-safety và build production
-- [ ] Tạo báo cáo nghiệm thu `docs/reports/PHASE-4-IMPLEMENTATION-REPORT.md`
+- [x] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả
+- [x] Viết và chạy script xác thực `scripts/test-phase4-vault.ts` thao tác trực tiếp trên Neon PostgreSQL & Upstash Redis
+- [x] Chạy `npx turbo build` kiểm tra type-safety và build production
+- [x] Tạo báo cáo nghiệm thu `docs/reports/PHASE-4-IMPLEMENTATION-REPORT.md`

@@ -35,16 +35,23 @@ async function verify() {
     const employeesCount = await sql`SELECT count(*) FROM employees;`;
     const grantsCount = await sql`SELECT count(*) FROM grants;`;
     const auditLogsCount = await sql`SELECT count(*) FROM audit_logs;`;
+    const vaultCount = await sql`SELECT count(*) FROM vault_credentials;`;
 
     console.log("=== NEON POSTGRESQL REAL VERIFICATION ===");
     console.log("Departments Count:", departmentsCount[0].count);
     console.log("Employees Count:", employeesCount[0].count);
     console.log("Grants Count:", grantsCount[0].count);
+    console.log("Vault Credentials Count:", vaultCount[0].count);
     console.log("Audit Logs Count:", auditLogsCount[0].count);
 
     if (parseInt(departmentsCount[0].count, 10) > 0) {
       const depts = await sql`SELECT id, name, code, monthly_budget_usd, currency FROM departments LIMIT 5;`;
       console.log("\nRegistered Departments:", depts);
+    }
+
+    if (parseInt(vaultCount[0].count, 10) > 0) {
+      const v = await sql`SELECT id, resource_name, account_email, max_concurrency, status, last_rotated_at FROM vault_credentials LIMIT 5;`;
+      console.log("\nVault Shared Credentials:", v);
     }
 
     if (parseInt(employeesCount[0].count, 10) > 0) {
