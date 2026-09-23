@@ -21,9 +21,9 @@ export const auditLogs = pgTable("audit_logs", {
 
 export const grants = pgTable("grants", {
   id: uuid("id").defaultRandom().primaryKey(),
-  employeeId: uuid("employee_id").references(() => employees.id).notNull(),
+  employeeId: uuid("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
   resourceName: varchar("resource_name", { length: 255 }).notNull(),
-  grantedBy: uuid("granted_by").references(() => employees.id).notNull(),
+  grantedBy: varchar("granted_by", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
