@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { db, grants, auditLogs, employees } from "@/db";
-import { eq, sql } from "drizzle-orm";
+import { db, grants, auditLogs, employees, vaultCredentials } from "@/db";
+import { eq, and, sql } from "drizzle-orm";
 import { getResourceDetails } from "@/lib/catalog";
 import { getDepartmentBudgetStats } from "@/lib/budget";
+import { acquireSessionLease } from "@/lib/session-broker";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,67 @@ export async function GET(
       return NextResponse.redirect(new URL("/?error=grant_expired", request.url));
     }
 
-    // 6. Update usage count and timestamp
+    // 6. Concurrency Lease Check via Session Broker (Upstash Redis)
+    const [activeCred] = await db
+      .select()
+      .from(vaultCredentials)
+      .where(
+        and(
+          eq(vaultCredentials.resourceName, grant.resourceName),
+          eq(vaultCredentials.status, "ACTIVE")
+        )
+      )
+      .limit(1);
+
+    let sessionLeaseId: string | null = null;
+    if (activeCred) {
+      const leaseResult = await acquireSessionLease(
+        activeCred.id,
+        session.user.id,
+        activeCred.maxConcurrency,
+        1800 // 30 minutes TTL
+      );
+
+      if (!leaseResult.acquired) {
+        // Record concurrency blocked audit event
+        await db.insert(auditLogs).values({
+          actorId: session.user.id,
+          action: "CONCURRENCY_LIMIT_BLOCKED",
+          targetId: activeCred.id,
+          metadata: {
+            resourceName: grant.resourceName,
+            employeeEmail: session.user.email,
+            activeCount: leaseResult.activeCount,
+            maxConcurrency: leaseResult.maxConcurrency,
+          },
+        });
+
+        return NextResponse.redirect(
+          new URL(
+            `/?error=concurrency_limit_exceeded&tool=${encodeURIComponent(grant.resourceName)}`,
+            request.url
+          )
+        );
+      }
+
+      sessionLeaseId = activeCred.id;
+
+      // Log session lease acquisition
+      await db.insert(auditLogs).values({
+        actorId: session.user.id,
+        action: "SESSION_LEASE_ACQUIRED",
+        targetId: activeCred.id,
+        metadata: {
+          resourceName: grant.resourceName,
+          employeeEmail: session.user.email,
+          activeCount: leaseResult.activeCount,
+          maxConcurrency: leaseResult.maxConcurrency,
+          isExistingLease: leaseResult.isExisting || false,
+        },
+      });
+    }
+
+    // 7. Update usage count and timestamp
     await db
       .update(grants)
       .set({
@@ -75,6 +136,7 @@ export async function GET(
         targetUrl: resourceInfo.officialUrl,
         clientIp,
         estimatedCostUsd: resourceInfo.costPerLaunch,
+        sessionLeaseId,
       },
     });
 

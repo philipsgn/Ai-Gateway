@@ -80,3 +80,7 @@ export async function checkRedisHealth(): Promise<{ status: "connected" | "not_c
     return { status: "error" };
   }
 }
+
+export function getRedisClient(): Redis | null {
+  return redis;
+}

@@ -11,10 +11,10 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 4, bám sát 100% phâ
 - [x] Xây dựng module mã hóa `apps/web/src/lib/vault.ts` hỗ trợ AES-256-GCM (encrypt, decrypt, verify)
 
 ## Nhóm 2: Bộ Điều Phối Phiên Động & Concurrency Lease Mutex (Session Broker Engine)
-- [ ] Xây dựng module `apps/web/src/lib/session-broker.ts` sử dụng Upstash Redis
-- [ ] Xây dựng logic `acquireSessionLease` với kiểm tra trần đồng thời `max_concurrency`
-- [ ] Xây dựng logic `releaseSessionLease` thu hồi phiên ngay lập tức
-- [ ] Cập nhật Launch Gateway `/api/launch/[grantId]` tự động kiểm tra và chiếm slot phiên trước khi chuyển hướng
+- [x] Xây dựng module `apps/web/src/lib/session-broker.ts` sử dụng Upstash Redis
+- [x] Xây dựng logic `acquireSessionLease` với kiểm tra trần đồng thời `max_concurrency`
+- [x] Xây dựng logic `releaseSessionLease` thu hồi phiên ngay lập tức
+- [x] Cập nhật Launch Gateway `/api/launch/[grantId]` tự động kiểm tra và chiếm slot phiên trước khi chuyển hướng
 
 ## Nhóm 3: Giao Diện Quản Trị Vault Tại Admin Portal (/admin)
 - [ ] Thêm các thẻ thống kê tổng quan Vault & Phiên đồng thời đang chạy
