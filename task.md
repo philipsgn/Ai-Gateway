@@ -11,9 +11,9 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 3, bám sát 100% phâ
 - [x] Cập nhật script `scripts/verify-db.ts` hỗ trợ xác thực bảng departments
 
 ## Nhóm 2: Đơn Giá Dịch Vụ & Budget Governance Engine (Cost Calculation & Quota)
-- [ ] Cập nhật `apps/web/src/lib/catalog.ts` bổ sung `costPerLaunch` cho từng công cụ AI
-- [ ] Xây dựng module tính toán ngân sách `apps/web/src/lib/budget.ts` tính toán chi tiêu, % sử dụng và trạng thái ngưỡng (`NORMAL`, `WARNING`, `EXCEEDED`)
-- [ ] Cập nhật Launch Gateway `/api/launch/[grantId]` ghi audit log `BUDGET_THRESHOLD_ALERT` khi phòng ban đạt ngưỡng cảnh báo
+- [x] Cập nhật `apps/web/src/lib/catalog.ts` bổ sung `costPerLaunch` cho từng công cụ AI
+- [x] Xây dựng module tính toán ngân sách `apps/web/src/lib/budget.ts` tính toán chi tiêu, % sử dụng và trạng thái ngưỡng (`NORMAL`, `WARNING`, `EXCEEDED`)
+- [x] Cập nhật Launch Gateway `/api/launch/[grantId]` ghi audit log `BUDGET_THRESHOLD_ALERT` khi phòng ban đạt ngưỡng cảnh báo
 
 ## Nhóm 3: Giao Diện Quản Trị Phòng Ban & Ngân Sách (Admin Portal Management)
 - [ ] Mở rộng giao diện `/admin`:

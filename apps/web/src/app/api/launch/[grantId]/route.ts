@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { db, grants, auditLogs } from "@/db";
+import { db, grants, auditLogs, employees } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { getResourceDetails } from "@/lib/catalog";
+import { getDepartmentBudgetStats } from "@/lib/budget";
 
 export const dynamic = "force-dynamic";
 
@@ -73,10 +74,42 @@ export async function GET(
         employeeEmail: session.user.email,
         targetUrl: resourceInfo.officialUrl,
         clientIp,
+        estimatedCostUsd: resourceInfo.costPerLaunch,
       },
     });
 
-    // 8. Safe redirect to official resource URL
+    // 8. Check Department Budget & Alert if threshold crossed
+    try {
+      const [emp] = await db
+        .select({ departmentId: employees.departmentId })
+        .from(employees)
+        .where(eq(employees.id, grant.employeeId))
+        .limit(1);
+
+      if (emp?.departmentId) {
+        const budgetStats = await getDepartmentBudgetStats(emp.departmentId);
+        if (budgetStats && (budgetStats.status === "WARNING" || budgetStats.status === "EXCEEDED")) {
+          await db.insert(auditLogs).values({
+            actorId: session.user.id,
+            action: "BUDGET_THRESHOLD_ALERT",
+            targetId: emp.departmentId,
+            metadata: {
+              departmentName: budgetStats.name,
+              departmentCode: budgetStats.code,
+              status: budgetStats.status,
+              percentageUsed: budgetStats.percentageUsed,
+              spentUsd: budgetStats.spentUsd,
+              monthlyBudgetUsd: budgetStats.monthlyBudgetUsd,
+              triggeredByLaunch: grant.resourceName,
+            },
+          });
+        }
+      }
+    } catch (budgetErr) {
+      console.error("[Budget Alert Error]:", budgetErr);
+    }
+
+    // 9. Safe redirect to official resource URL
     return NextResponse.redirect(resourceInfo.officialUrl, { status: 307 });
   } catch (error) {
     console.error("[Launch Gateway Error]:", error);
