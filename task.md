@@ -1,34 +1,34 @@
-# Task Tracking: Phase 3 — Department Budget & Quota Governance
+# Task Tracking: Phase 4 — Shared Credential Vault & Dynamic Session Broker
 
-Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 3, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
+Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 4, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
 
 ---
 
-## Nhóm 1: Cơ Sở Dữ Liệu Phòng Ban & Migration (Data & Schema)
-- [x] Định nghĩa schema Drizzle bảng `departments` và thêm `departmentId` vào `employees` (`apps/web/src/db/schema.ts`)
-- [x] Cập nhật migration script `scripts/migrate.ts` tạo bảng `departments` và cột `department_id` trong `employees`
-- [x] Thực thi `npm run db:migrate` áp dụng lên Neon PostgreSQL thật
-- [x] Cập nhật script `scripts/verify-db.ts` hỗ trợ xác thực bảng departments
+## Nhóm 1: Cơ Sở Dữ Liệu Vault & Mã Hóa AES-256-GCM (Data & Cryptography)
+- [x] Định nghĩa schema Drizzle bảng `vault_credentials` trong `apps/web/src/db/schema.ts`
+- [x] Cập nhật migration script `scripts/migrate.ts` tạo bảng `vault_credentials`
+- [x] Thực thi `npm run db:migrate` áp dụng DDL lên Neon PostgreSQL thật
+- [x] Xây dựng module mã hóa `apps/web/src/lib/vault.ts` hỗ trợ AES-256-GCM (encrypt, decrypt, verify)
 
-## Nhóm 2: Đơn Giá Dịch Vụ & Budget Governance Engine (Cost Calculation & Quota)
-- [x] Cập nhật `apps/web/src/lib/catalog.ts` bổ sung `costPerLaunch` cho từng công cụ AI
-- [x] Xây dựng module tính toán ngân sách `apps/web/src/lib/budget.ts` tính toán chi tiêu, % sử dụng và trạng thái ngưỡng (`NORMAL`, `WARNING`, `EXCEEDED`)
-- [x] Cập nhật Launch Gateway `/api/launch/[grantId]` ghi audit log `BUDGET_THRESHOLD_ALERT` khi phòng ban đạt ngưỡng cảnh báo
+## Nhóm 2: Bộ Điều Phối Phiên Động & Concurrency Lease Mutex (Session Broker Engine)
+- [ ] Xây dựng module `apps/web/src/lib/session-broker.ts` sử dụng Upstash Redis
+- [ ] Xây dựng logic `acquireSessionLease` với kiểm tra trần đồng thời `max_concurrency`
+- [ ] Xây dựng logic `releaseSessionLease` thu hồi phiên ngay lập tức
+- [ ] Cập nhật Launch Gateway `/api/launch/[grantId]` tự động kiểm tra và chiếm slot phiên trước khi chuyển hướng
 
-## Nhóm 3: Giao Diện Quản Trị Phòng Ban & Ngân Sách (Admin Portal Management)
-- [x] Mở rộng giao diện `/admin`:
-  - Thêm thẻ thống kê ngân sách tổng quan (Tổng ngân sách, Chi phí đã dùng, Số phòng ban cảnh báo)
-  - Thêm biểu mẫu Tạo phòng ban mới (`handleCreateDepartment`)
-  - Thêm chức năng Gán phòng ban cho nhân viên (`handleAssignDepartment`)
-  - Thêm bảng chi tiết Quản lý ngân sách phòng ban kèm Progress Bar trực quan và cảnh báo màu sắc (Normal / Warning / Exceeded)
-  - Bổ sung hiển thị thông tin Phòng ban trong danh bạ nhân viên Registered Employees
+## Nhóm 3: Giao Diện Quản Trị Vault Tại Admin Portal (/admin)
+- [ ] Thêm các thẻ thống kê tổng quan Vault & Phiên đồng thời đang chạy
+- [ ] Xây dựng Server Action `handleCreateVaultCredential` mã hóa và lưu trữ credential vào Neon DB
+- [ ] Xây dựng Server Action `handleRotateVaultCredential` và `handleUpdateVaultStatus`
+- [ ] Bảng quản lý Shared Vault Credentials hiển thị trạng thái và số phiên active theo thời gian thực từ Redis
 
-## Nhóm 4: Giao Diện Phía Nhân Viên (Employee UI Visibility)
-- [x] Cập nhật trang chủ `/`: Hiển thị phòng ban trực thuộc và thanh tiến trình ngân sách AI của bộ phận
-- [x] Cảnh báo trạng thái ngân sách phòng ban và đơn giá ước tính trên thẻ khởi chạy công cụ AI
+## Nhóm 4: Giao Diện Phía Nhân Viên & Trả Phiên (Employee Session Visibility)
+- [ ] Hiển thị thông số tải ghế dùng chung (Active Slots / Max Slots) trên thẻ công cụ AI tại trang chủ `/`
+- [ ] Thêm chỉ báo phiên đang giữ kèm nút **"Trả slot (Release)"** qua Server Action `handleReleaseSession`
+- [ ] Xử lý thông báo lỗi người dùng khi phòng ban hoặc công cụ hết slot truy cập đồng thời (`concurrency_limit_exceeded`)
 
-## Nhóm 5: Kiểm Chứng & Nghiệm Thu Thực Tế (Verification)
-- [x] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint
-- [x] Chạy kiểm tra rà soát `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả
-- [x] Tạo phòng ban mẫu (`Engineering`, `Marketing`), gán nhân viên vào phòng ban trên Neon PostgreSQL
-- [x] Khởi chạy công cụ AI, xác nhận chi phí phòng ban tăng lên tương ứng và audit log được lưu vết
+## Nhóm 5: Kiểm Chứng Toàn Diện & Nghiệm Thu Dữ Liệu Thật (Verification)
+- [ ] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả
+- [ ] Viết và chạy script xác thực `scripts/test-phase4-vault.ts` thao tác trực tiếp trên Neon PostgreSQL & Upstash Redis
+- [ ] Chạy `npx turbo build` kiểm tra type-safety và build production
+- [ ] Tạo báo cáo nghiệm thu `docs/reports/PHASE-4-IMPLEMENTATION-REPORT.md`

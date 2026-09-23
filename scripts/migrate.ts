@@ -115,7 +115,24 @@ async function runMigration() {
     `);
     console.log("  ✓ Table 'grants' verified / created (with access_count & last_accessed_at).");
 
-    // 6. Create indexes
+    // 6. Create vault_credentials table
+    await sql.unsafe(`
+      CREATE TABLE IF NOT EXISTS vault_credentials (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        resource_name VARCHAR(255) NOT NULL,
+        account_email VARCHAR(255) NOT NULL,
+        encrypted_secret TEXT NOT NULL,
+        iv VARCHAR(64) NOT NULL,
+        auth_tag VARCHAR(64) NOT NULL,
+        max_concurrency INTEGER NOT NULL DEFAULT 1,
+        status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+        last_rotated_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log("  ✓ Table 'vault_credentials' verified / created.");
+
+    // 7. Create indexes
     await sql.unsafe(`
       CREATE INDEX IF NOT EXISTS idx_departments_code ON departments(code);
       CREATE INDEX IF NOT EXISTS idx_employees_google_sub ON employees(google_sub);
@@ -123,6 +140,8 @@ async function runMigration() {
       CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_grants_employee_id ON grants(employee_id);
       CREATE INDEX IF NOT EXISTS idx_grants_status ON grants(status);
+      CREATE INDEX IF NOT EXISTS idx_vault_credentials_resource ON vault_credentials(resource_name);
+      CREATE INDEX IF NOT EXISTS idx_vault_credentials_status ON vault_credentials(status);
     `);
     console.log("  ✓ Indexes verified / created.");
 

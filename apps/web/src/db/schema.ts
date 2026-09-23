@@ -41,6 +41,19 @@ export const grants = pgTable("grants", {
   expiresAt: timestamp("expires_at", { withTimezone: true }),
 });
 
+export const vaultCredentials = pgTable("vault_credentials", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  resourceName: varchar("resource_name", { length: 255 }).notNull(),
+  accountEmail: varchar("account_email", { length: 255 }).notNull(),
+  encryptedSecret: text("encrypted_secret").notNull(),
+  iv: varchar("iv", { length: 64 }).notNull(),
+  authTag: varchar("auth_tag", { length: 64 }).notNull(),
+  maxConcurrency: integer("max_concurrency").notNull().default(1),
+  status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
+  lastRotatedAt: timestamp("last_rotated_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Department = typeof departments.$inferSelect;
 export type NewDepartment = typeof departments.$inferInsert;
 export type Employee = typeof employees.$inferSelect;
@@ -49,4 +62,7 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type Grant = typeof grants.$inferSelect;
 export type NewGrant = typeof grants.$inferInsert;
+export type VaultCredential = typeof vaultCredentials.$inferSelect;
+export type NewVaultCredential = typeof vaultCredentials.$inferInsert;
+
 
