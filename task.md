@@ -29,8 +29,8 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 2, bám sát 100% phâ
 - [x] Xây dựng trạng thái xử lý khi không có quyền hoặc quyền đã hết hạn (grant_revoked, grant_expired, forbidden, grant_not_found)
 
 ## Nhóm 4: Bảng Giám Sát Mức Độ Sử Dụng Cho Admin (Admin Portal Analytics)
-- [ ] Cập nhật bảng quản lý phân quyền tại `/admin`: Bổ sung hiển thị `Lượt truy cập` và `Truy cập gần nhất`
-- [ ] Thêm chỉ số tổng quan trên Admin Dashboard: Tổng số lượt khởi chạy AI toàn doanh nghiệp
+- [x] Cập nhật bảng quản lý phân quyền tại `/admin`: Bổ sung hiển thị `Lượt dùng` (`accessCount`) và `Truy cập gần nhất` (`lastAccessedAt`)
+- [x] Thêm chỉ số tổng quan trên Admin Dashboard: Tổng số lượt khởi chạy AI toàn doanh nghiệp (card thứ 4 với icon Sparkles)
 
 ## Nhóm 5: Kiểm Chứng & Nghiệm Thu Thực Tế (Verification)
 - [ ] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint

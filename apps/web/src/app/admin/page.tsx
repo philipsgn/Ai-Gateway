@@ -158,7 +158,7 @@ export default async function AdminPortalPage() {
   try {
     allEmployees = await db.select().from(employees).orderBy(desc(employees.createdAt));
     
-    // Query grants joined with employee details
+    // Query grants joined with employee details including usage tracking metrics
     allGrantsList = await db
       .select({
         id: grants.id,
@@ -166,6 +166,8 @@ export default async function AdminPortalPage() {
         resourceName: grants.resourceName,
         grantedBy: grants.grantedBy,
         status: grants.status,
+        accessCount: grants.accessCount,
+        lastAccessedAt: grants.lastAccessedAt,
         createdAt: grants.createdAt,
         expiresAt: grants.expiresAt,
         employeeName: employees.name,
@@ -182,6 +184,7 @@ export default async function AdminPortalPage() {
 
   const activeGrantsCount = allGrantsList.filter((g) => g.status === "ACTIVE").length;
   const revokedGrantsCount = allGrantsList.filter((g) => g.status === "REVOKED").length;
+  const totalLaunchesCount = allGrantsList.reduce((acc, g) => acc + (Number(g.accessCount) || 0), 0);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -194,10 +197,10 @@ export default async function AdminPortalPage() {
               <span>Root Administrator Portal</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              Cổng Quản Trị Phân Quyền AI
+              Cổng Quản Trị Phân Quyền & Giám Sát AI
             </h1>
             <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
-              Quản lý danh mục nhân viên và cấp phát quyền sử dụng các dịch vụ AI doanh nghiệp (ChatGPT, Claude, Gemini, Cursor). Mọi hành động đều được lưu vết kiểm toán vĩnh viễn (Audit Log).
+              Quản lý danh mục nhân viên, cấp phát quyền và theo dõi tần suất sử dụng thực tế của từng dịch vụ AI (ChatGPT, Claude, Gemini, Cursor). Mọi hành động khởi chạy và phân quyền đều được lưu vết kiểm toán vĩnh viễn (Audit Log).
             </p>
           </div>
 
@@ -212,35 +215,45 @@ export default async function AdminPortalPage() {
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <Users className="w-5 h-5" />
+        {/* Quick Stats Grid with Total AI Launches */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
+          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-slate-400 font-medium">Nhân viên đã đăng ký</p>
-              <p className="text-xl font-bold text-white mt-0.5">{allEmployees.length}</p>
+              <p className="text-[11px] text-slate-400 font-medium">Nhân viên</p>
+              <p className="text-lg font-bold text-white mt-0.5">{allEmployees.length}</p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5" />
+          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-slate-400 font-medium">Quyền đang hiệu lực (ACTIVE)</p>
-              <p className="text-xl font-bold text-emerald-400 mt-0.5">{activeGrantsCount}</p>
+              <p className="text-[11px] text-slate-400 font-medium">Quyền ACTIVE</p>
+              <p className="text-lg font-bold text-emerald-400 mt-0.5">{activeGrantsCount}</p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center">
-              <XCircle className="w-5 h-5" />
+          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center shrink-0">
+              <XCircle className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-slate-400 font-medium">Quyền đã thu hồi (REVOKED)</p>
-              <p className="text-xl font-bold text-slate-300 mt-0.5">{revokedGrantsCount}</p>
+              <p className="text-[11px] text-slate-400 font-medium">Đã thu hồi</p>
+              <p className="text-lg font-bold text-slate-300 mt-0.5">{revokedGrantsCount}</p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400 font-medium">Lượt khởi chạy AI</p>
+              <p className="text-lg font-bold text-amber-300 mt-0.5">{totalLaunchesCount}</p>
             </div>
           </div>
         </div>
@@ -370,6 +383,8 @@ export default async function AdminPortalPage() {
                   <th className="py-3 px-4">Dịch vụ AI</th>
                   <th className="py-3 px-4">Nhân viên được cấp</th>
                   <th className="py-3 px-4">Trạng thái</th>
+                  <th className="py-3 px-4">Lượt dùng</th>
+                  <th className="py-3 px-4">Truy cập gần nhất</th>
                   <th className="py-3 px-4">Ngày cấp</th>
                   <th className="py-3 px-4">Hết hạn</th>
                   <th className="py-3 px-4 text-right">Thao tác</th>
@@ -419,6 +434,20 @@ export default async function AdminPortalPage() {
                             <XCircle className="w-3 h-3 text-slate-500" />
                             REVOKED
                           </span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-mono text-xs font-semibold bg-slate-800/80 text-amber-300 border border-slate-700">
+                          {grant.accessCount || 0}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                        {grant.lastAccessedAt ? (
+                          new Date(grant.lastAccessedAt).toLocaleString("vi-VN")
+                        ) : (
+                          <span className="text-slate-500">Chưa dùng</span>
                         )}
                       </td>
 
