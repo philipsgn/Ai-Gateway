@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { db, employees, grants, auditLogs, departments } from "@/db";
+import { db, employees, grants, auditLogs, departments, vaultCredentials } from "@/db";
 import { desc, eq } from "drizzle-orm";
 import {
   ShieldAlert,
@@ -24,8 +24,17 @@ import {
   DollarSign,
   TrendingUp,
   UserPlus,
+  Lock,
+  Key,
+  RefreshCw,
+  Sliders,
+  Shield,
+  EyeOff,
+  Radio,
 } from "lucide-react";
 import { getAllDepartmentsBudgetStats, DepartmentBudgetSummary } from "@/lib/budget";
+import { encryptCredential, maskSecret } from "@/lib/vault";
+import { getActiveLeaseCount } from "@/lib/session-broker";
 
 export const dynamic = "force-dynamic";
 
@@ -146,6 +155,129 @@ export default async function AdminPortalPage() {
     revalidatePath("/");
   }
 
+  // Server Action: Create Shared Vault Credential
+  async function handleCreateVaultCredential(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (currentSession?.user?.role !== "ROOT_ADMIN") {
+      throw new Error("Unauthorized: Only Root Admin can manage vault credentials");
+    }
+
+    const resourceName = (formData.get("resourceName") as string)?.trim();
+    const accountEmail = (formData.get("accountEmail") as string)?.trim();
+    const secret = (formData.get("secret") as string)?.trim();
+    const maxConcurrencyStr = (formData.get("maxConcurrency") as string)?.trim() || "1";
+
+    if (!resourceName || !accountEmail || !secret) return;
+
+    const maxConcurrency = Math.max(1, parseInt(maxConcurrencyStr, 10) || 1);
+    const { encryptedSecret, iv, authTag } = encryptCredential(secret);
+
+    const [newCred] = await db
+      .insert(vaultCredentials)
+      .values({
+        resourceName,
+        accountEmail,
+        encryptedSecret,
+        iv,
+        authTag,
+        maxConcurrency,
+        status: "ACTIVE",
+        lastRotatedAt: new Date(),
+      })
+      .returning();
+
+    await db.insert(auditLogs).values({
+      actorId: currentSession.user.id,
+      action: "VAULT_CREDENTIAL_CREATED",
+      targetId: newCred.id,
+      metadata: {
+        resourceName,
+        accountEmail,
+        maxConcurrency,
+        createdBy: currentSession.user.email,
+        encryptionAlgorithm: "AES-256-GCM",
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  }
+
+  // Server Action: Rotate Shared Vault Credential
+  async function handleRotateVaultCredential(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (currentSession?.user?.role !== "ROOT_ADMIN") {
+      throw new Error("Unauthorized: Only Root Admin can rotate vault credentials");
+    }
+
+    const credentialId = formData.get("credentialId") as string;
+    const newSecret = (formData.get("newSecret") as string)?.trim();
+
+    if (!credentialId || !newSecret) return;
+
+    const { encryptedSecret, iv, authTag } = encryptCredential(newSecret);
+
+    const [updated] = await db
+      .update(vaultCredentials)
+      .set({
+        encryptedSecret,
+        iv,
+        authTag,
+        status: "ACTIVE",
+        lastRotatedAt: new Date(),
+      })
+      .where(eq(vaultCredentials.id, credentialId))
+      .returning();
+
+    await db.insert(auditLogs).values({
+      actorId: currentSession.user.id,
+      action: "VAULT_CREDENTIAL_ROTATED",
+      targetId: credentialId,
+      metadata: {
+        resourceName: updated?.resourceName,
+        rotatedBy: currentSession.user.email,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  }
+
+  // Server Action: Update Vault Credential Status
+  async function handleUpdateVaultStatus(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (currentSession?.user?.role !== "ROOT_ADMIN") {
+      throw new Error("Unauthorized: Only Root Admin can update vault status");
+    }
+
+    const credentialId = formData.get("credentialId") as string;
+    const status = (formData.get("status") as string) || "ACTIVE";
+
+    if (!credentialId) return;
+
+    await db
+      .update(vaultCredentials)
+      .set({ status })
+      .where(eq(vaultCredentials.id, credentialId));
+
+    await db.insert(auditLogs).values({
+      actorId: currentSession.user.id,
+      action: "VAULT_STATUS_UPDATED",
+      targetId: credentialId,
+      metadata: {
+        newStatus: status,
+        updatedBy: currentSession.user.email,
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  }
+
   // Server Action: Issue New AI Grant
   async function handleCreateGrant(formData: FormData) {
     "use server";
@@ -233,12 +365,25 @@ export default async function AdminPortalPage() {
   let allGrantsList: any[] = [];
   let allDepartments: (typeof departments.$inferSelect)[] = [];
   let departmentBudgetSummaries: DepartmentBudgetSummary[] = [];
+  let allVaultCreds: any[] = [];
   let fetchError: string | null = null;
 
   try {
     allEmployees = await db.select().from(employees).orderBy(desc(employees.createdAt));
     allDepartments = await db.select().from(departments).orderBy(departments.name);
     departmentBudgetSummaries = await getAllDepartmentsBudgetStats();
+
+    // Query vault credentials and active leases from Upstash Redis
+    const rawVaultCreds = await db.select().from(vaultCredentials).orderBy(desc(vaultCredentials.createdAt));
+    allVaultCreds = await Promise.all(
+      rawVaultCreds.map(async (c) => {
+        const activeCount = await getActiveLeaseCount(c.id);
+        return {
+          ...c,
+          activeCount,
+        };
+      })
+    );
     
     // Query grants joined with employee details including usage tracking metrics
     allGrantsList = await db
@@ -268,6 +413,7 @@ export default async function AdminPortalPage() {
   const activeGrantsCount = allGrantsList.filter((g) => g.status === "ACTIVE").length;
   const revokedGrantsCount = allGrantsList.filter((g) => g.status === "REVOKED").length;
   const totalLaunchesCount = allGrantsList.reduce((acc, g) => acc + (Number(g.accessCount) || 0), 0);
+  const totalActiveLeases = allVaultCreds.reduce((acc, c) => acc + (c.activeCount || 0), 0);
 
   // Budget calculations across all departments
   const totalCompanyBudgetUsd = departmentBudgetSummaries.reduce((acc, d) => acc + d.monthlyBudgetUsd, 0);
@@ -303,45 +449,65 @@ export default async function AdminPortalPage() {
           </div>
         </div>
 
-        {/* Quick Stats Grid with Total AI Launches and Budget Governance */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+        {/* Quick Stats Grid with Total AI Launches, Budget Governance, and Shared Vault Leases */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-400 font-medium">Nhân viên</p>
-              <p className="text-lg font-bold text-white mt-0.5">{allEmployees.length}</p>
+              <p className="text-[10px] text-slate-400 font-medium">Nhân viên</p>
+              <p className="text-base font-bold text-white mt-0.5">{allEmployees.length}</p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-400 font-medium">Quyền ACTIVE</p>
-              <p className="text-lg font-bold text-emerald-400 mt-0.5">{activeGrantsCount}</p>
+              <p className="text-[10px] text-slate-400 font-medium">Quyền ACTIVE</p>
+              <p className="text-base font-bold text-emerald-400 mt-0.5">{activeGrantsCount}</p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-400 font-medium">Lượt khởi chạy AI</p>
-              <p className="text-lg font-bold text-amber-300 mt-0.5">{totalLaunchesCount}</p>
+              <p className="text-[10px] text-slate-400 font-medium">Lượt launch</p>
+              <p className="text-base font-bold text-amber-300 mt-0.5">{totalLaunchesCount}</p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
               <DollarSign className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-400 font-medium">Chi phí AI đã dùng</p>
-              <p className="text-lg font-bold text-cyan-300 mt-0.5">${totalCompanySpentUsd.toFixed(2)}</p>
+              <p className="text-[10px] text-slate-400 font-medium">Chi phí AI</p>
+              <p className="text-base font-bold text-cyan-300 mt-0.5">${totalCompanySpentUsd.toFixed(2)}</p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center shrink-0">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 font-medium">Tài khoản Vault</p>
+              <p className="text-base font-bold text-violet-300 mt-0.5">{allVaultCreds.length}</p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0">
+              <Radio className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 font-medium">Phiên Live (Redis)</p>
+              <p className="text-base font-bold text-rose-300 mt-0.5">{totalActiveLeases}</p>
             </div>
           </div>
         </div>
@@ -589,6 +755,288 @@ export default async function AdminPortalPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* ==================== SECTION: SHARED CREDENTIAL VAULT & CONCURRENCY ==================== */}
+      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-violet-500/30 space-y-6 bg-gradient-to-b from-violet-500/5 to-slate-900/40">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center border border-violet-500/20">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                Kho Tài Khoản Dùng Chung & Điều Phối Phiên (Shared Credential Vault)
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                  AES-256-GCM + Redis Mutex
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Lưu trữ chuỗi bí mật/mật khẩu tài khoản dùng chung an toàn tuyệt đối. Giới hạn số ghế truy cập đồng thời qua Upstash Redis Lease.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Vault Management Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          {/* Panel A: Store New Shared Credential */}
+          <div className="p-4 sm:p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Key className="w-4 h-4 text-violet-400" />
+              Lưu Trữ Mật Khẩu / API Key Dùng Chung
+            </h3>
+            <form action={handleCreateVaultCredential} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">Công cụ AI</label>
+                <select
+                  name="resourceName"
+                  required
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500"
+                >
+                  <option value="ChatGPT Team">ChatGPT Team (OpenAI)</option>
+                  <option value="Claude 3.5 Sonnet Pro">Claude 3.5 Sonnet Pro (Anthropic)</option>
+                  <option value="Cursor Pro / Business">Cursor Pro / Business (Anysphere)</option>
+                  <option value="Gemini Advanced">Gemini Advanced (Google)</option>
+                  <option value="GitHub Copilot Enterprise">GitHub Copilot Enterprise (GitHub)</option>
+                  <option value="Midjourney Organization">Midjourney Organization (Midjourney)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">Email / Tên định danh tài khoản dùng chung</label>
+                <input
+                  type="email"
+                  name="accountEmail"
+                  required
+                  placeholder="shared-eng@company.com"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1 flex justify-between">
+                  <span>Mật khẩu hoặc Master Secret</span>
+                  <span className="text-violet-400 text-[10px]">Tự động mã hóa AES-256-GCM</span>
+                </label>
+                <input
+                  type="password"
+                  name="secret"
+                  required
+                  placeholder="••••••••••••••••"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                  Giới hạn số phiên đồng thời (Concurrency Max Slots)
+                </label>
+                <input
+                  type="number"
+                  name="maxConcurrency"
+                  min="1"
+                  max="50"
+                  defaultValue="2"
+                  required
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500 font-mono"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">
+                  Khi đạt giới hạn, người thứ N+1 sẽ bị hoãn cho đến khi đồng nghiệp trả slot.
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2 px-4 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-all shadow-md shadow-violet-600/20 active:scale-[0.98]"
+              >
+                Mã Hóa & Lưu Vào Vault
+              </button>
+            </form>
+          </div>
+
+          {/* Panel B: Rotate Existing Credential */}
+          <div className="p-4 sm:p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-amber-400" />
+                Xoay Vòng Mật Khẩu (Credential Rotation)
+              </h3>
+              {allVaultCreds.length === 0 ? (
+                <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs">
+                  Chưa có tài khoản nào trong Vault để xoay vòng.
+                </div>
+              ) : (
+                <form action={handleRotateVaultCredential} className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-300 mb-1">Chọn tài khoản Vault cần xoay vòng</label>
+                    <select
+                      name="credentialId"
+                      required
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                    >
+                      {allVaultCreds.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.resourceName} ({c.accountEmail}) - Trạng thái: {c.status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-300 mb-1">Mật khẩu hoặc API Key mới</label>
+                    <input
+                      type="password"
+                      name="newSecret"
+                      required
+                      placeholder="Nhập khóa/mật khẩu mới..."
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Hệ thống sẽ mã hóa lại bằng khóa mới, cập nhật mốc thời gian <code className="text-amber-300">lastRotatedAt</code> và ghi nhật ký kiểm toán vĩnh viễn.
+                  </p>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2 px-4 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-all shadow-md shadow-amber-600/20 active:scale-[0.98]"
+                  >
+                    Xoay Vòng Mật Khẩu Ngay
+                  </button>
+                </form>
+              )}
+            </div>
+
+            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+              <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                Chuẩn Mã Hóa AES-256-GCM
+              </span>
+              <p>Mỗi tài khoản được mã hóa với IV ngẫu nhiên 96-bit và Authentication Tag 128-bit chống mọi hành vi giả mạo ciphertext.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Table: Shared Vault Credentials & Live Concurrency Monitor */}
+        <div className="pt-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+            <span>Danh Sách Tài Khoản Trong Vault & Giám Sát Phiên Đồng Thời (Live Redis)</span>
+            <span className="text-[10px] text-slate-500 font-mono font-normal">
+              {allVaultCreds.length} tài khoản • {totalActiveLeases} phiên đang hoạt động
+            </span>
+          </h3>
+
+          {allVaultCreds.length === 0 ? (
+            <div className="p-6 rounded-xl bg-slate-900/40 border border-slate-800 text-center text-slate-400 text-xs">
+              Chưa có tài khoản nào được lưu trữ trong Vault. Thêm tài khoản dùng chung ở biểu mẫu phía trên.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[11px]">
+                  <tr>
+                    <th className="py-3 px-4">Dịch vụ AI</th>
+                    <th className="py-3 px-4">Tài khoản dùng chung</th>
+                    <th className="py-3 px-4">Bảo mật</th>
+                    <th className="py-3 px-4">Phiên đồng thời (Live Redis)</th>
+                    <th className="py-3 px-4">Trạng thái</th>
+                    <th className="py-3 px-4">Lần xoay gần nhất</th>
+                    <th className="py-3 px-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-sans">
+                  {allVaultCreds.map((cred) => {
+                    const isAtCapacity = cred.activeCount >= cred.maxConcurrency;
+                    return (
+                      <tr key={cred.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="py-3 px-4 font-semibold text-white">
+                          {cred.resourceName}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-300">
+                          {cred.accountEmail}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                            <Lock className="w-2.5 h-2.5" />
+                            AES-256-GCM
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 w-44">
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] font-mono">
+                              <span className={isAtCapacity ? "text-rose-400 font-bold" : "text-emerald-400"}>
+                                {cred.activeCount} / {cred.maxConcurrency} slots
+                              </span>
+                              <span className="text-slate-500">
+                                {isAtCapacity ? "HẾT GHẾ" : "CÒN CHỖ"}
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                              <div
+                                className={`h-full transition-all duration-300 ${
+                                  isAtCapacity ? "bg-rose-500" : cred.activeCount > 0 ? "bg-amber-500" : "bg-emerald-500"
+                                }`}
+                                style={{ width: `${Math.min(100, (cred.activeCount / cred.maxConcurrency) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {cred.status === "ACTIVE" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              <CheckCircle2 className="w-3 h-3" />
+                              ACTIVE
+                            </span>
+                          ) : cred.status === "ROTATING" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                              <RefreshCw className="w-3 h-3 text-amber-400 animate-spin" />
+                              ROTATING
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                              <XCircle className="w-3 h-3 text-rose-400" />
+                              SUSPENDED
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 text-[11px]">
+                          {cred.lastRotatedAt
+                            ? new Date(cred.lastRotatedAt).toLocaleDateString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })
+                            : "Ban đầu"}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <form action={handleUpdateVaultStatus} className="inline-block">
+                            <input type="hidden" name="credentialId" value={cred.id} />
+                            {cred.status === "ACTIVE" ? (
+                              <input type="hidden" name="status" value="SUSPENDED" />
+                            ) : (
+                              <input type="hidden" name="status" value="ACTIVE" />
+                            )}
+                            <button
+                              type="submit"
+                              className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                                cred.status === "ACTIVE"
+                                  ? "bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700"
+                                  : "bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30"
+                              }`}
+                            >
+                              {cred.status === "ACTIVE" ? "Tạm dừng" : "Kích hoạt"}
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Form: Issue New AI Grant */}

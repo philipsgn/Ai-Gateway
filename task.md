@@ -17,10 +17,10 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 4, bám sát 100% phâ
 - [x] Cập nhật Launch Gateway `/api/launch/[grantId]` tự động kiểm tra và chiếm slot phiên trước khi chuyển hướng
 
 ## Nhóm 3: Giao Diện Quản Trị Vault Tại Admin Portal (/admin)
-- [ ] Thêm các thẻ thống kê tổng quan Vault & Phiên đồng thời đang chạy
-- [ ] Xây dựng Server Action `handleCreateVaultCredential` mã hóa và lưu trữ credential vào Neon DB
-- [ ] Xây dựng Server Action `handleRotateVaultCredential` và `handleUpdateVaultStatus`
-- [ ] Bảng quản lý Shared Vault Credentials hiển thị trạng thái và số phiên active theo thời gian thực từ Redis
+- [x] Thêm các thẻ thống kê tổng quan Vault & Phiên đồng thời đang chạy
+- [x] Xây dựng Server Action `handleCreateVaultCredential` mã hóa và lưu trữ credential vào Neon DB
+- [x] Xây dựng Server Action `handleRotateVaultCredential` và `handleUpdateVaultStatus`
+- [x] Bảng quản lý Shared Vault Credentials hiển thị trạng thái và số phiên active theo thời gian thực từ Redis
 
 ## Nhóm 4: Giao Diện Phía Nhân Viên & Trả Phiên (Employee Session Visibility)
 - [ ] Hiển thị thông số tải ghế dùng chung (Active Slots / Max Slots) trên thẻ công cụ AI tại trang chủ `/`
