@@ -45,6 +45,11 @@ async function verify() {
       console.log("\nRegistered Employees:", emps);
     }
 
+    if (parseInt(grantsCount[0].count, 10) > 0) {
+      const g = await sql`SELECT id, resource_name, status, access_count, last_accessed_at FROM grants LIMIT 5;`;
+      console.log("\nGrants with Usage Tracking:", g);
+    }
+
     if (parseInt(auditLogsCount[0].count, 10) > 0) {
       const logs = await sql`SELECT action, actor_id, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 5;`;
       console.log("\nRecent Audit Logs:", logs);

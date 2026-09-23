@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
 
 export const employees = pgTable("employees", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -25,6 +25,8 @@ export const grants = pgTable("grants", {
   resourceName: varchar("resource_name", { length: 255 }).notNull(),
   grantedBy: varchar("granted_by", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
+  accessCount: integer("access_count").notNull().default(0),
+  lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
 });

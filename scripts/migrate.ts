@@ -89,11 +89,16 @@ async function runMigration() {
         resource_name VARCHAR(255) NOT NULL,
         granted_by VARCHAR(255) NOT NULL,
         status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+        access_count INTEGER NOT NULL DEFAULT 0,
+        last_accessed_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         expires_at TIMESTAMPTZ
       );
+
+      ALTER TABLE grants ADD COLUMN IF NOT EXISTS access_count INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE grants ADD COLUMN IF NOT EXISTS last_accessed_at TIMESTAMPTZ;
     `);
-    console.log("  ✓ Table 'grants' verified / created.");
+    console.log("  ✓ Table 'grants' verified / created (with access_count & last_accessed_at).");
 
     // 5. Create indexes
     await sql.unsafe(`
