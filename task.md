@@ -11,9 +11,9 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 5, bám sát 100% phâ
 - [x] Xây dựng module kiểm toán `apps/web/src/lib/audit.ts` hỗ trợ tính checksum SHA-256 và hàm xác thực toàn vẹn `verifyAuditIntegrity`
 
 ## Nhóm 2: API Xuất Báo Cáo Tuân Thủ Chuẩn Doanh Nghiệp (Compliance Export Engine)
-- [ ] Xây dựng Route Handler `/api/audit/export/route.ts` hỗ trợ định dạng `?format=csv` (RFC 4180)
-- [ ] Bổ sung hỗ trợ định dạng `?format=json` (Gói chứng thực ISO 27001 / SOC 2 Compliance Package)
-- [ ] Kiểm tra xác thực phân quyền an toàn khi xuất báo cáo
+- [x] Xây dựng Route Handler `/api/audit/export/route.ts` hỗ trợ định dạng `?format=csv` (RFC 4180)
+- [x] Bổ sung hỗ trợ định dạng `?format=json` (Gói chứng thực ISO 27001 / SOC 2 Compliance Package)
+- [x] Kiểm tra xác thực phân quyền an toàn khi xuất báo cáo
 
 ## Nhóm 3: Bảng Phân Tích ROI & Trực Quan Hóa Tuân Thủ Tại /audit (Compliance Dashboard)
 - [ ] Nâng cấp giao diện `/audit`:
