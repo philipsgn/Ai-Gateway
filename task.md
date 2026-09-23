@@ -16,12 +16,12 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 5, bám sát 100% phâ
 - [x] Kiểm tra xác thực phân quyền an toàn khi xuất báo cáo
 
 ## Nhóm 3: Bảng Phân Tích ROI & Trực Quan Hóa Tuân Thủ Tại /audit (Compliance Dashboard)
-- [ ] Nâng cấp giao diện `/audit`:
-  - Thẻ chứng nhận WORM Immutability & Checksum Status
-  - Thẻ phân tích ROI (Giờ làm việc tiết kiệm, giá trị kinh tế tạo ra)
-  - Biểu đồ phân bổ tỷ lệ các loại sự kiện (Event Distribution)
-  - Bộ lọc sự kiện theo phân loại (Category Filter)
-  - Nút bấm xuất nhanh CSV và JSON Compliance Package
+- [x] Nâng cấp giao diện `/audit`:
+  - [x] Thẻ chứng nhận WORM Immutability & Checksum Status
+  - [x] Thẻ phân tích ROI (Giờ làm việc tiết kiệm, giá trị kinh tế tạo ra)
+  - [x] Biểu đồ phân bổ tỷ lệ các loại sự kiện (Event Distribution)
+  - [x] Bộ lọc sự kiện theo phân loại (Category Filter)
+  - [x] Nút bấm xuất nhanh CSV và JSON Compliance Package
 
 ## Nhóm 4: Tích Hợp Kiểm Toán & Báo Cáo Tại Admin Portal (/admin)
 - [ ] Bổ sung liên kết xuất báo cáo tuân thủ nhanh trên header Admin Portal
