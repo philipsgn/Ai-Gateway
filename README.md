@@ -2,14 +2,15 @@
 
 > Hệ thống quản lý tài khoản & quyền truy cập dịch vụ AI cho doanh nghiệp. Mỗi tính năng trong repo này đều chạy thật — có credential thật, hạ tầng thật, deploy public thật.
 
-**🟢 Live Demo:** `<điền link Vercel thật sau khi deploy Phase 10>`
-**📐 Kiến trúc chi tiết:** [`Plan_architecture.md`](./Plan_architecture.md)
+**🟢 Live Demo:** `<điền link Vercel thật sau khi deploy>`
+**📐 Kiến trúc chi tiết:** [`docs/Plan_architecture.md`](./docs/Plan_architecture.md)
+**📚 Kiến trúc mở rộng (Enterprise):** [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
 
 ---
 
 ## Nguyên tắc dự án
 
-Không mock, không giả lập, không shell chờ tích hợp thật. Nếu một tính năng chưa có credential/hạ tầng thật đứng sau, nó chưa nằm trong repo — không nằm dưới dạng mock. Xem chi tiết tại [`Plan_architecture.md` §0](./Plan_architecture.md#0-nguyên-tắc-duy-nhất).
+Không mock, không giả lập, không shell chờ tích hợp thật. Nếu một tính năng chưa có credential/hạ tầng thật đứng sau, nó chưa nằm trong repo — không nằm dưới dạng mock. Xem chi tiết tại [`Plan_architecture.md` §0](./docs/Plan_architecture.md#0-nguyên-tắc-duy-nhất).
 
 ## Chạy ở local
 
