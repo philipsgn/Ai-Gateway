@@ -24,7 +24,11 @@ import {
   Sparkles,
   Layers,
   ExternalLink,
+  Zap,
+  Clock,
+  Compass,
 } from "lucide-react";
+import { getResourceDetails } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -112,7 +116,7 @@ export default async function HomePage({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Error alert if rate-limited or error param */}
+      {/* Launch & Security Error Alerts */}
       {searchParams.error === "rate_limited" && (
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
@@ -120,6 +124,54 @@ export default async function HomePage({
             <p className="font-semibold">Quá giới hạn đăng nhập (Rate Limit Exceeded)</p>
             <p className="text-amber-300/80 text-xs">
               Upstash Redis đã chặn yêu cầu vì có hơn 10 lần thử trong 60 giây. Vui lòng đợi một lát.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {searchParams.error === "grant_revoked" && (
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 flex items-center gap-3">
+          <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold">Quyền truy cập đã bị thu hồi (Access Revoked)</p>
+            <p className="text-rose-300/80 text-xs">
+              Quyền sử dụng dịch vụ AI này đã bị Quản trị viên thu hồi trên PostgreSQL. Bạn không thể khởi chạy công cụ này.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {searchParams.error === "grant_expired" && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 flex items-center gap-3">
+          <Clock className="w-5 h-5 text-amber-400 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold">Quyền dịch vụ AI đã hết hạn (Grant Expired)</p>
+            <p className="text-amber-300/80 text-xs">
+              Thời hạn sử dụng dịch vụ AI này đã kết thúc. Vui lòng liên hệ Root Administrator để được gia hạn quyền.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {searchParams.error === "forbidden" && (
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 flex items-center gap-3">
+          <Lock className="w-5 h-5 text-rose-400 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold">Từ chối truy cập (Forbidden)</p>
+            <p className="text-rose-300/80 text-xs">
+              Bạn không phải là chủ sở hữu của quyền truy cập này. Yêu cầu khởi chạy đã bị chặn và ghi nhận nhật ký an ninh.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {searchParams.error === "grant_not_found" && (
+        <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-slate-400 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold">Không tìm thấy quyền dịch vụ</p>
+            <p className="text-slate-400 text-xs">
+              Mã cấp quyền dịch vụ AI không tồn tại trong cơ sở dữ liệu.
             </p>
           </div>
         </div>
@@ -134,7 +186,7 @@ export default async function HomePage({
             <div className="max-w-2xl space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Phase 1 • Real Auth & AI Access Matrix
+                Phase 2 • Service Launch & Direct Access Hub
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
@@ -142,7 +194,7 @@ export default async function HomePage({
               </h1>
 
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                Nền tảng quản lý phân quyền và cổng truy cập AI doanh nghiệp: Đăng nhập Google OAuth 2.0 thật, phân biệt Root Admin vs Nhân viên thật, cấp và thu hồi quyền AI (ChatGPT, Claude, Gemini, Cursor) với Audit Log thời gian thực.
+                Nền tảng quản lý phân quyền và cổng khởi chạy dịch vụ AI doanh nghiệp: Đăng nhập Google OAuth 2.0 thật, phân quyền linh hoạt, cổng khởi chạy trực tiếp an toàn với kiểm tra trạng thái và đếm tần suất sử dụng thời gian thực.
               </p>
 
               {/* Login Form */}
@@ -209,9 +261,9 @@ export default async function HomePage({
               <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
                 <Activity className="w-4 h-4" />
               </div>
-              <h2 className="font-semibold text-sm text-slate-200">Upstash Redis Protection</h2>
+              <h2 className="font-semibold text-sm text-slate-200">Direct Launch Gateway</h2>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Bảo vệ endpoint đăng nhập bằng thuật toán Sliding Window qua kết nối HTTP REST serverless.
+                Kiểm tra quyền, kiểm tra hạn dùng, đếm lượt truy cập và ghi Audit Log thời gian thực trước khi chuyển hướng an toàn.
               </p>
             </div>
           </div>
@@ -286,7 +338,7 @@ export default async function HomePage({
                 <div>
                   <h3 className="font-semibold text-sm text-white">Bạn đang đăng nhập với quyền Root Administrator</h3>
                   <p className="text-xs text-slate-300">
-                    Bạn có toàn quyền truy cập Cổng Quản Trị để cấp phát và thu hồi quyền dịch vụ AI cho tất cả nhân viên.
+                    Bạn có toàn quyền truy cập Cổng Quản Trị để cấp phát, giám sát tần suất sử dụng và thu hồi quyền dịch vụ AI.
                   </p>
                 </div>
               </div>
@@ -300,60 +352,115 @@ export default async function HomePage({
             </div>
           )}
 
-          {/* Employee's Active AI Grants */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-400" />
-                Dịch vụ AI được cấp quyền sử dụng (Active Grants)
-              </h2>
-              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                {userGrants.length} dịch vụ đang kích hoạt
+          {/* AI Launcher Hub: Interactive Tool Grid */}
+          <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-indigo-400" />
+                  AI Launcher Hub — Cổng Khởi Chạy Dịch Vụ
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Chọn công cụ AI được phân quyền và bấm "Khởi chạy" để kết nối an toàn qua Gateway.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 self-start sm:self-auto">
+                {userGrants.length} dịch vụ kích hoạt
               </span>
             </div>
 
             {userGrants.length === 0 ? (
-              <div className="p-6 rounded-xl bg-slate-900/40 border border-slate-800 text-center space-y-2">
-                <p className="text-slate-300 text-sm font-medium">
+              <div className="p-8 rounded-xl bg-slate-900/40 border border-slate-800 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto border border-indigo-500/20">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <p className="text-slate-200 text-sm font-semibold">
                   Chưa có quyền dịch vụ AI nào được cấp cho tài khoản này
                 </p>
-                <p className="text-slate-500 text-xs max-w-md mx-auto">
-                  Vui lòng liên hệ Quản trị viên (Root Administrator) để được cấp quyền truy cập các công cụ như ChatGPT Team, Claude Pro, Gemini Advanced hoặc Cursor.
+                <p className="text-slate-400 text-xs max-w-md mx-auto leading-relaxed">
+                  Tài khoản của bạn đã được lưu trên PostgreSQL nhưng chưa được cấp quyền công cụ AI nào. Vui lòng liên hệ Quản trị viên (Root Administrator) để được phân quyền ChatGPT, Claude, Gemini hoặc Cursor.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {userGrants.map((grant) => (
-                  <div
-                    key={grant.id}
-                    className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <h3 className="font-semibold text-sm text-slate-100">{grant.resourceName}</h3>
-                        </div>
-                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                          Cấp bởi: {grant.grantedBy}
-                        </p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        ACTIVE
-                      </span>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {userGrants.map((grant) => {
+                  const details = getResourceDetails(grant.resourceName);
+                  return (
+                    <div
+                      key={grant.id}
+                      className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-4 group relative overflow-hidden"
+                    >
+                      <div className="space-y-3">
+                        {/* Top: Name, Provider & Badges */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                              <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-indigo-300 transition-colors">
+                                {grant.resourceName}
+                              </h3>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              Cung cấp bởi <span className="text-slate-300 font-medium">{details.provider}</span>
+                            </p>
+                          </div>
 
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                      <span>
-                        Hạn:{" "}
-                        {grant.expiresAt
-                          ? new Date(grant.expiresAt).toLocaleDateString("vi-VN")
-                          : "Vô thời hạn"}
-                      </span>
-                      <span className="text-indigo-400 font-medium">Sẵn sàng sử dụng</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${details.badgeColor}`}>
+                              {details.category}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              ACTIVE
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                          {details.description}
+                        </p>
+
+                        {/* Metadata Metrics */}
+                        <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono">
+                          <div className="flex items-center gap-1.5">
+                            <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span>Lượt dùng: <strong className="text-slate-200">{grant.accessCount || 0}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                            <span>
+                              {grant.expiresAt
+                                ? `Hạn: ${new Date(grant.expiresAt).toLocaleDateString("vi-VN")}`
+                                : "Vô thời hạn"}
+                            </span>
+                          </div>
+                          <div className="col-span-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+                            <Clock className="w-3 h-3 text-slate-500 shrink-0" />
+                            <span>
+                              Truy cập gần nhất:{" "}
+                              {grant.lastAccessedAt
+                                ? new Date(grant.lastAccessedAt).toLocaleString("vi-VN")
+                                : "Chưa khởi chạy"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Direct Launch Button */}
+                      <div className="pt-2">
+                        <a
+                          href={`/api/launch/${grant.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all shadow-md shadow-indigo-600/20"
+                        >
+                          <span>Khởi chạy dịch vụ</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

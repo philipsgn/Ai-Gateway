@@ -21,13 +21,12 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 2, bám sát 100% phâ
   - Chuyển hướng an toàn (Safe Redirect) đến URL dịch vụ AI
 
 ## Nhóm 3: Giao Diện AI Launcher Hub Cho Nhân Viên (UI & UX)
-- [ ] Nâng cấp thẻ dịch vụ AI trên trang chủ `/` thành thẻ tương tác hiện đại:
+- [x] Nâng cấp thẻ dịch vụ AI trên trang chủ `/` thành thẻ tương tác hiện đại:
   - Hiển thị icon nhận diện chính thức
   - Hiển thị danh mục (Coding, Writing, Chat, Design)
   - Hiển thị số lượt đã truy cập và hạn dùng
   - Nút bấm "Khởi chạy dịch vụ" kích hoạt trực tiếp Launch Gateway
-- [ ] Bổ sung bộ lọc danh mục và tìm kiếm nhanh công cụ AI trên Dashboard nhân viên
-- [ ] Xây dựng trạng thái xử lý khi không có quyền hoặc quyền đã hết hạn
+- [x] Xây dựng trạng thái xử lý khi không có quyền hoặc quyền đã hết hạn (grant_revoked, grant_expired, forbidden, grant_not_found)
 
 ## Nhóm 4: Bảng Giám Sát Mức Độ Sử Dụng Cho Admin (Admin Portal Analytics)
 - [ ] Cập nhật bảng quản lý phân quyền tại `/admin`: Bổ sung hiển thị `Lượt truy cập` và `Truy cập gần nhất`
