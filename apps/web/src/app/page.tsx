@@ -4,7 +4,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, signIn, signOut } from "@/auth";
-import { db, employees, grants } from "@/db";
+import { db, employees, grants, departments } from "@/db";
 import { eq, and, desc } from "drizzle-orm";
 import { checkLoginRateLimit } from "@/lib/redis";
 import {
@@ -27,8 +27,12 @@ import {
   Zap,
   Clock,
   Compass,
+  Building2,
+  DollarSign,
+  AlertTriangle,
 } from "lucide-react";
 import { getResourceDetails } from "@/lib/catalog";
+import { getDepartmentBudgetStats, DepartmentBudgetSummary } from "@/lib/budget";
 
 export const dynamic = "force-dynamic";
 
@@ -102,6 +106,9 @@ export default async function HomePage({
 
   // If employee record is found, query their active AI grants
   let userGrants: (typeof grants.$inferSelect)[] = [];
+  let employeeDept: typeof departments.$inferSelect | null = null;
+  let deptBudgetStats: DepartmentBudgetSummary | null = null;
+
   if (dbEmployee?.id) {
     try {
       userGrants = await db
@@ -109,8 +116,21 @@ export default async function HomePage({
         .from(grants)
         .where(and(eq(grants.employeeId, dbEmployee.id), eq(grants.status, "ACTIVE")))
         .orderBy(desc(grants.createdAt));
+
+      // Query employee's department and quota stats if assigned
+      if (dbEmployee.departmentId) {
+        const [d] = await db
+          .select()
+          .from(departments)
+          .where(eq(departments.id, dbEmployee.departmentId))
+          .limit(1);
+        if (d) {
+          employeeDept = d;
+          deptBudgetStats = await getDepartmentBudgetStats(d.id, d);
+        }
+      }
     } catch (err: any) {
-      console.error("[PostgreSQL] Error querying employee grants:", err);
+      console.error("[PostgreSQL] Error querying employee grants or department:", err);
     }
   }
 
@@ -288,13 +308,19 @@ export default async function HomePage({
                 )}
 
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-xl font-bold text-white tracking-tight">
                       {dbEmployee?.name || "Người dùng"}
                     </h1>
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       {dbEmployee?.role || "EMPLOYEE"}
                     </span>
+                    {employeeDept && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1 font-mono">
+                        <Building2 className="w-3 h-3 text-cyan-400" />
+                        {employeeDept.name} ({employeeDept.code})
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-slate-400 font-mono mt-0.5">
                     {dbEmployee?.email}
@@ -327,6 +353,79 @@ export default async function HomePage({
               </div>
             </div>
           </div>
+
+          {/* Department Budget & Quota Visibility */}
+          {deptBudgetStats && (
+            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20 shrink-0">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      Ngân Sách AI Phòng Ban: {deptBudgetStats.name}
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                        {deptBudgetStats.code}
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Hạn mức chi tiêu AI chung cho toàn bộ nhân sự trực thuộc bộ phận
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  {deptBudgetStats.status === "EXCEEDED" ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                      <AlertTriangle className="w-3 h-3 text-rose-400" />
+                      VƯỢT HẠN MỨC NGÂN SÁCH
+                    </span>
+                  ) : deptBudgetStats.status === "WARNING" ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                      <AlertTriangle className="w-3 h-3 text-amber-400" />
+                      TIỆM CẬN TRẦN NGÂN SÁCH ({deptBudgetStats.percentageUsed}%)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <CheckCircle className="w-3 h-3" />
+                      TRONG HẠN MỨC AN TOÀN
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-xs font-mono pt-1">
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-0.5">
+                  <span className="text-slate-400 text-[10px] block">HẠN MỨC THÁNG</span>
+                  <span className="font-bold text-slate-200">${deptBudgetStats.monthlyBudgetUsd.toFixed(2)}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-0.5">
+                  <span className="text-slate-400 text-[10px] block">ĐÃ DÙNG THỰC TẾ</span>
+                  <span className="font-bold text-amber-300">${deptBudgetStats.spentUsd.toFixed(2)} ({deptBudgetStats.percentageUsed}%)</span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-0.5">
+                  <span className="text-slate-400 text-[10px] block">CÒN LẠI</span>
+                  <span className="font-bold text-emerald-300">${deptBudgetStats.remainingUsd.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1 pt-1">
+                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                  <div
+                    className={`h-full ${
+                      deptBudgetStats.status === "EXCEEDED"
+                        ? "bg-rose-500"
+                        : deptBudgetStats.status === "WARNING"
+                        ? "bg-amber-400"
+                        : "bg-emerald-400"
+                    } transition-all duration-500`}
+                    style={{ width: `${Math.min(100, deptBudgetStats.percentageUsed)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Root Admin Management Callout */}
           {dbEmployee?.role === "ROOT_ADMIN" && (
@@ -420,11 +519,15 @@ export default async function HomePage({
                           {details.description}
                         </p>
 
-                        {/* Metadata Metrics */}
+                        {/* Metadata Metrics & Cost Estimation */}
                         <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono">
                           <div className="flex items-center gap-1.5">
                             <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                             <span>Lượt dùng: <strong className="text-slate-200">{grant.accessCount || 0}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <DollarSign className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                            <span>Đơn giá: <strong className="text-cyan-300">${details.costPerLaunch.toFixed(2)}</strong>/lượt</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
@@ -434,12 +537,11 @@ export default async function HomePage({
                                 : "Vô thời hạn"}
                             </span>
                           </div>
-                          <div className="col-span-2 flex items-center gap-1.5 text-[10px] text-slate-500">
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                             <Clock className="w-3 h-3 text-slate-500 shrink-0" />
                             <span>
-                              Truy cập gần nhất:{" "}
                               {grant.lastAccessedAt
-                                ? new Date(grant.lastAccessedAt).toLocaleString("vi-VN")
+                                ? new Date(grant.lastAccessedAt).toLocaleDateString("vi-VN")
                                 : "Chưa khởi chạy"}
                             </span>
                           </div>
