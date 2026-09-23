@@ -26,8 +26,8 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 1, bám sát 100% phâ
 ## Nhóm 4: Hạ tầng & Triển khai Đám Mây (Infra & Deploy)
 - [x] Chuẩn hóa kịch bản chạy migration `npm run db:migrate`
 - [x] Bổ sung cấu hình `ROOT_ADMIN_EMAIL` vào `.env.local` đồng bộ với `.env.example`
-- [ ] Thiết lập cơ sở dữ liệu PostgreSQL managed (Neon / Supabase) và cấu hình connection string
-- [ ] Thiết lập Upstash Redis instance và lấy REST URL cùng REST Token
+- [x] Thiết lập cơ sở dữ liệu PostgreSQL managed (Neon / Supabase) và cấu hình connection string
+- [x] Thiết lập Upstash Redis instance và lấy REST URL cùng REST Token
 - [ ] Cấu hình biến môi trường trên Vercel:
   - `DATABASE_URL`
   - `GOOGLE_CLIENT_ID`
