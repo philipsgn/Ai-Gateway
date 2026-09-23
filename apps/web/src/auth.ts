@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { db, employees, auditLogs } from "./db";
+import { db, employees } from "./db";
+import { logAuditEvent } from "./lib/audit";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
@@ -53,8 +54,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             })
             .returning();
 
-          // Append-only AuditLog record
-          await db.insert(auditLogs).values({
+          // Append-only AuditLog record with SHA-256 Checksum
+          await logAuditEvent({
             actorId: employee.id,
             action: employee.role === "ROOT_ADMIN" ? "ROOT_ADMIN_LOGIN" : "EMPLOYEE_LOGIN",
             targetId: employee.id,

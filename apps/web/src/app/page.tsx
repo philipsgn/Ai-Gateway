@@ -5,9 +5,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth, signIn, signOut } from "@/auth";
-import { db, employees, grants, departments, vaultCredentials, auditLogs } from "@/db";
+import { db, employees, grants, departments, vaultCredentials } from "@/db";
 import { eq, and, desc } from "drizzle-orm";
 import { checkLoginRateLimit } from "@/lib/redis";
+import { logAuditEvent } from "@/lib/audit";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -76,7 +77,7 @@ export default async function HomePage({
 
     await releaseSessionLease(credentialId, currentSession.user.id);
 
-    await db.insert(auditLogs).values({
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "SESSION_LEASE_RELEASED",
       targetId: credentialId,

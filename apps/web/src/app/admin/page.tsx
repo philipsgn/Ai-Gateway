@@ -31,10 +31,12 @@ import {
   Shield,
   EyeOff,
   Radio,
+  Download,
 } from "lucide-react";
 import { getAllDepartmentsBudgetStats, DepartmentBudgetSummary } from "@/lib/budget";
 import { encryptCredential, maskSecret } from "@/lib/vault";
 import { getActiveLeaseCount } from "@/lib/session-broker";
+import { logAuditEvent } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -105,7 +107,7 @@ export default async function AdminPortalPage() {
       })
       .returning();
 
-    await db.insert(auditLogs).values({
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "DEPARTMENT_CREATED",
       targetId: dept.id,
@@ -141,7 +143,7 @@ export default async function AdminPortalPage() {
       })
       .where(eq(employees.id, employeeId));
 
-    await db.insert(auditLogs).values({
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "DEPARTMENT_ASSIGNED",
       targetId: employeeId,
@@ -187,7 +189,7 @@ export default async function AdminPortalPage() {
       })
       .returning();
 
-    await db.insert(auditLogs).values({
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "VAULT_CREDENTIAL_CREATED",
       targetId: newCred.id,
@@ -231,7 +233,7 @@ export default async function AdminPortalPage() {
       .where(eq(vaultCredentials.id, credentialId))
       .returning();
 
-    await db.insert(auditLogs).values({
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "VAULT_CREDENTIAL_ROTATED",
       targetId: credentialId,
@@ -264,7 +266,7 @@ export default async function AdminPortalPage() {
       .set({ status })
       .where(eq(vaultCredentials.id, credentialId));
 
-    await db.insert(auditLogs).values({
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "VAULT_STATUS_UPDATED",
       targetId: credentialId,
@@ -309,8 +311,8 @@ export default async function AdminPortalPage() {
       })
       .returning();
 
-    // 2. Append to audit_logs table
-    await db.insert(auditLogs).values({
+    // 2. Append to audit_logs table with SHA-256 Checksum
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "GRANT_ISSUED",
       targetId: employeeId,
@@ -344,8 +346,8 @@ export default async function AdminPortalPage() {
     // 1. Update status to REVOKED
     await db.update(grants).set({ status: "REVOKED" }).where(eq(grants.id, grantId));
 
-    // 2. Append to audit_logs table
-    await db.insert(auditLogs).values({
+    // 2. Append to audit_logs table with SHA-256 Checksum
+    await logAuditEvent({
       actorId: currentSession.user.id,
       action: "GRANT_REVOKED",
       targetId: existing.employeeId,
@@ -438,12 +440,21 @@ export default async function AdminPortalPage() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <a
+              href="/api/audit/export?format=csv"
+              download
+              className="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              title="Xuất báo cáo tuân thủ WORM định dạng CSV chuẩn RFC 4180"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Xuất Tuân Thủ (CSV)</span>
+            </a>
             <Link
               href="/audit"
-              className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-2 transition-colors"
+              className="px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-2 transition-colors"
             >
-              <span>Xem Nhật Ký Kiểm Toán</span>
+              <span>Nhật Ký & Tuân Thủ</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </Link>
           </div>

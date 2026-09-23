@@ -24,8 +24,8 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 5, bám sát 100% phâ
   - [x] Nút bấm xuất nhanh CSV và JSON Compliance Package
 
 ## Nhóm 4: Tích Hợp Kiểm Toán & Báo Cáo Tại Admin Portal (/admin)
-- [ ] Bổ sung liên kết xuất báo cáo tuân thủ nhanh trên header Admin Portal
-- [ ] Cập nhật module Launch Gateway và các Server Actions để ghi `checksum` SHA-256 cho mọi bản ghi audit mới
+- [x] Bổ sung liên kết xuất báo cáo tuân thủ nhanh trên header Admin Portal
+- [x] Cập nhật module Launch Gateway và các Server Actions để ghi `checksum` SHA-256 cho mọi bản ghi audit mới
 
 ## Nhóm 5: Kiểm Chứng & Nghiệm Thu Toàn Diện (Verification)
 - [ ] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả

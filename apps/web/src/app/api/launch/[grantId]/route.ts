@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { db, grants, auditLogs, employees, vaultCredentials } from "@/db";
+import { db, grants, employees, vaultCredentials } from "@/db";
 import { eq, and, sql } from "drizzle-orm";
 import { getResourceDetails } from "@/lib/catalog";
 import { getDepartmentBudgetStats } from "@/lib/budget";
 import { acquireSessionLease } from "@/lib/session-broker";
+import { logAuditEvent } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -75,8 +76,8 @@ export async function GET(
       );
 
       if (!leaseResult.acquired) {
-        // Record concurrency blocked audit event
-        await db.insert(auditLogs).values({
+        // Record concurrency blocked audit event with SHA-256 Checksum
+        await logAuditEvent({
           actorId: session.user.id,
           action: "CONCURRENCY_LIMIT_BLOCKED",
           targetId: activeCred.id,
@@ -98,8 +99,8 @@ export async function GET(
 
       sessionLeaseId = activeCred.id;
 
-      // Log session lease acquisition
-      await db.insert(auditLogs).values({
+      // Log session lease acquisition with SHA-256 Checksum
+      await logAuditEvent({
         actorId: session.user.id,
         action: "SESSION_LEASE_ACQUIRED",
         targetId: activeCred.id,
@@ -126,7 +127,7 @@ export async function GET(
     const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
     const resourceInfo = getResourceDetails(grant.resourceName);
 
-    await db.insert(auditLogs).values({
+    await logAuditEvent({
       actorId: session.user.id,
       action: "AI_SERVICE_LAUNCHED",
       targetId: grant.id,
@@ -151,7 +152,7 @@ export async function GET(
       if (emp?.departmentId) {
         const budgetStats = await getDepartmentBudgetStats(emp.departmentId);
         if (budgetStats && (budgetStats.status === "WARNING" || budgetStats.status === "EXCEEDED")) {
-          await db.insert(auditLogs).values({
+          await logAuditEvent({
             actorId: session.user.id,
             action: "BUDGET_THRESHOLD_ALERT",
             targetId: emp.departmentId,
