@@ -3,8 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { auth, signIn, signOut } from "@/auth";
-import { db, employees, grants, departments } from "@/db";
+import { db, employees, grants, departments, vaultCredentials, auditLogs } from "@/db";
 import { eq, and, desc } from "drizzle-orm";
 import { checkLoginRateLimit } from "@/lib/redis";
 import {
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 import { getResourceDetails } from "@/lib/catalog";
 import { getDepartmentBudgetStats, DepartmentBudgetSummary } from "@/lib/budget";
+import { getActiveLeaseCount, getUserLease, releaseSessionLease } from "@/lib/session-broker";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,30 @@ export default async function HomePage({
   async function handleLogout() {
     "use server";
     await signOut({ redirectTo: "/" });
+  }
+
+  // Server Action: Handles voluntary release of active session lease
+  async function handleReleaseSession(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (!currentSession?.user?.id) return;
+    const credentialId = formData.get("credentialId") as string;
+    if (!credentialId) return;
+
+    await releaseSessionLease(credentialId, currentSession.user.id);
+
+    await db.insert(auditLogs).values({
+      actorId: currentSession.user.id,
+      action: "SESSION_LEASE_RELEASED",
+      targetId: credentialId,
+      metadata: {
+        employeeEmail: currentSession.user.email,
+        releasedAt: new Date().toISOString(),
+      },
+    });
+
+    revalidatePath("/");
+    revalidatePath("/admin");
   }
 
   // If authenticated, fetch employee data directly from PostgreSQL (NOT from session)
@@ -106,6 +132,7 @@ export default async function HomePage({
 
   // If employee record is found, query their active AI grants
   let userGrants: (typeof grants.$inferSelect)[] = [];
+  let userGrantsWithVault: any[] = [];
   let employeeDept: typeof departments.$inferSelect | null = null;
   let deptBudgetStats: DepartmentBudgetSummary | null = null;
 
@@ -116,6 +143,40 @@ export default async function HomePage({
         .from(grants)
         .where(and(eq(grants.employeeId, dbEmployee.id), eq(grants.status, "ACTIVE")))
         .orderBy(desc(grants.createdAt));
+
+      // Query active vault credentials and session leases for user's tools
+      userGrantsWithVault = await Promise.all(
+        userGrants.map(async (g) => {
+          const [cred] = await db
+            .select()
+            .from(vaultCredentials)
+            .where(
+              and(
+                eq(vaultCredentials.resourceName, g.resourceName),
+                eq(vaultCredentials.status, "ACTIVE")
+              )
+            )
+            .limit(1);
+
+          if (!cred) {
+            return { ...g, vaultInfo: null };
+          }
+
+          const activeSlots = await getActiveLeaseCount(cred.id);
+          const userLease = await getUserLease(cred.id, dbEmployee.id);
+
+          return {
+            ...g,
+            vaultInfo: {
+              credentialId: cred.id,
+              maxConcurrency: cred.maxConcurrency,
+              activeSlots,
+              hasActiveLease: userLease.hasActiveLease,
+              remainingMinutes: userLease.remainingMinutes,
+            },
+          };
+        })
+      );
 
       // Query employee's department and quota stats if assigned
       if (dbEmployee.departmentId) {
@@ -192,6 +253,18 @@ export default async function HomePage({
             <p className="font-semibold">Không tìm thấy quyền dịch vụ</p>
             <p className="text-slate-400 text-xs">
               Mã cấp quyền dịch vụ AI không tồn tại trong cơ sở dữ liệu.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {searchParams.error === "concurrency_limit_exceeded" && (
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold">Hết ghế truy cập đồng thời (Concurrency Limit Reached)</p>
+            <p className="text-rose-300/80 text-xs">
+              Tài khoản dùng chung của dịch vụ AI này đã đạt tối đa số người truy cập đồng thời theo chính sách bảo mật (Upstash Redis Lease Mutex). Vui lòng đợi đồng nghiệp hoàn thành hoặc bấm &quot;Trả slot&quot; nếu bạn đang giữ phiên.
             </p>
           </div>
         </div>
@@ -482,8 +555,12 @@ export default async function HomePage({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {userGrants.map((grant) => {
+                {userGrantsWithVault.map((grant) => {
                   const details = getResourceDetails(grant.resourceName);
+                  const vaultInfo = grant.vaultInfo;
+                  const isVaultConfigured = !!vaultInfo;
+                  const isSeatFull = isVaultConfigured && vaultInfo.activeSlots >= vaultInfo.maxConcurrency;
+
                   return (
                     <div
                       key={grant.id}
@@ -505,6 +582,12 @@ export default async function HomePage({
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
+                            {isVaultConfigured && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                <Lock className="w-2.5 h-2.5" />
+                                VAULT
+                              </span>
+                            )}
                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${details.badgeColor}`}>
                               {details.category}
                             </span>
@@ -518,6 +601,40 @@ export default async function HomePage({
                         <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
                           {details.description}
                         </p>
+
+                        {/* Shared Vault Seat Pool Status if configured */}
+                        {isVaultConfigured && (
+                          <div className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between text-[11px] font-mono">
+                              <span className="text-slate-400 flex items-center gap-1.5">
+                                <Lock className="w-3 h-3 text-violet-400" />
+                                Ghế dùng chung (Redis Mutex):
+                              </span>
+                              <span className={isSeatFull ? "text-rose-400 font-bold" : "text-emerald-400 font-semibold"}>
+                                {vaultInfo.activeSlots} / {vaultInfo.maxConcurrency} slots
+                              </span>
+                            </div>
+
+                            {/* Active Lease Badge & Release Button */}
+                            {vaultInfo.hasActiveLease && (
+                              <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                  <span>Đang giữ phiên: ~{vaultInfo.remainingMinutes}p</span>
+                                </span>
+                                <form action={handleReleaseSession}>
+                                  <input type="hidden" name="credentialId" value={vaultInfo.credentialId} />
+                                  <button
+                                    type="submit"
+                                    className="px-2 py-0.5 rounded bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 text-[10px] font-semibold border border-emerald-500/30 transition-colors"
+                                  >
+                                    Trả slot
+                                  </button>
+                                </form>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Metadata Metrics & Cost Estimation */}
                         <div className="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono">
@@ -554,9 +671,13 @@ export default async function HomePage({
                           href={`/api/launch/${grant.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all shadow-md shadow-indigo-600/20"
+                          className={`inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white transition-all shadow-md active:scale-[0.98] ${
+                            isSeatFull && !vaultInfo?.hasActiveLease
+                              ? "bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                              : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20"
+                          }`}
                         >
-                          <span>Khởi chạy dịch vụ</span>
+                          <span>{isSeatFull && !vaultInfo?.hasActiveLease ? "Đầy ghế • Thử lại sau" : "Khởi chạy dịch vụ"}</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </div>

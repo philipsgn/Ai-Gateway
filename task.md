@@ -23,9 +23,9 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 4, bám sát 100% phâ
 - [x] Bảng quản lý Shared Vault Credentials hiển thị trạng thái và số phiên active theo thời gian thực từ Redis
 
 ## Nhóm 4: Giao Diện Phía Nhân Viên & Trả Phiên (Employee Session Visibility)
-- [ ] Hiển thị thông số tải ghế dùng chung (Active Slots / Max Slots) trên thẻ công cụ AI tại trang chủ `/`
-- [ ] Thêm chỉ báo phiên đang giữ kèm nút **"Trả slot (Release)"** qua Server Action `handleReleaseSession`
-- [ ] Xử lý thông báo lỗi người dùng khi phòng ban hoặc công cụ hết slot truy cập đồng thời (`concurrency_limit_exceeded`)
+- [x] Hiển thị thông số tải ghế dùng chung (Active Slots / Max Slots) trên thẻ công cụ AI tại trang chủ `/`
+- [x] Thêm chỉ báo phiên đang giữ kèm nút **"Trả slot (Release)"** qua Server Action `handleReleaseSession`
+- [x] Xử lý thông báo lỗi người dùng khi phòng ban hoặc công cụ hết slot truy cập đồng thời (`concurrency_limit_exceeded`)
 
 ## Nhóm 5: Kiểm Chứng Toàn Diện & Nghiệm Thu Dữ Liệu Thật (Verification)
 - [ ] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả
