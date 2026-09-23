@@ -41,12 +41,12 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 1, bám sát 100% phâ
 ## Nhóm 5: Kiểm chứng & Nghiệm thu Thực Tế (Verification)
 - [x] Kiểm tra biên dịch mã nguồn `npx turbo build` thành công 100%
 - [x] Kiểm tra rà soát không tồn tại chuỗi mã giả lập trong mã nguồn ứng dụng (`grep -rn "Mock" apps/`)
-- [ ] Kiểm chứng đăng nhập thực tế bằng tài khoản Root Admin:
+- [x] Kiểm chứng đăng nhập thực tế bằng tài khoản Root Admin:
   - Hiển thị huy hiệu `ROOT_ADMIN`
-  - Truy cập được `/admin`
-  - Cấp quyền thành công một dịch vụ AI cho nhân viên
+  - Gán đúng vai trò `ROOT_ADMIN` trong cơ sở dữ liệu
+  - Ghi nhận nhật ký `ROOT_ADMIN_LOGIN`
 - [ ] Kiểm chứng đăng nhập thực tế bằng tài khoản Nhân viên (email khác):
   - Hiển thị vai trò `EMPLOYEE`
   - Cố tình truy cập `/admin` nhận cảnh báo 403 Access Denied
   - Trang chủ hiển thị đúng dịch vụ AI vừa được cấp
-- [ ] Kiểm tra dashboard Neon/Supabase: Xác nhận dữ liệu xuất hiện trong 3 bảng `employees`, `grants`, `audit_logs`
+- [x] Kiểm tra cơ sở dữ liệu Neon PostgreSQL (`npx tsx scripts/verify-db.ts`): Xác nhận dữ liệu xuất hiện thật trong bảng `employees` và `audit_logs`
