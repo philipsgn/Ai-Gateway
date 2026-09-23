@@ -29,7 +29,43 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 
 ---
 
-## 3. Quy Tắc Điều Phối & Quản Trị Phạm Vi
+## 3. Các Cột Mốc Năng Lực Nghiệp Vụ (Key Business Deliverables)
+
+Để định hình rõ giá trị nền tảng doanh nghiệp nhưng vẫn tuân thủ nguyên tắc không đặc tả mã nguồn sớm, mỗi giai đoạn được xác lập các cột mốc năng lực nghiệp vụ cấp cao như sau:
+
+### Phase 1: Real Identity, Root Admin & Grants Matrix (🚧 Đang nghiệm thu & Deploy)
+> *Task breakdown chi tiết: Xem độc quyền tại [docs/PHASE.md](./PHASE.md) và [task.md](../task.md).*
+- **Cột mốc M1.1:** Đăng nhập Single Sign-On (SSO) bằng Google OAuth 2.0 thật 100%.
+- **Cột mốc M1.2:** Cơ chế nhận diện tự động vai trò Quản trị viên tối cao (Root Administrator) và Nhân viên (Employee).
+- **Cột mốc M1.3:** Cổng Quản trị phân quyền (Admin Portal): Cấp quyền công cụ AI (ChatGPT, Claude, Gemini, Cursor) theo thời hạn và thu hồi quyền tức thì.
+- **Cột mốc M1.4:** Nhật ký kiểm toán minh bạch trên PostgreSQL thật và cơ chế bảo vệ tần suất bằng Upstash Redis.
+
+### Phase 2: Service Launch & Direct Access Portal (⏳ Chưa mở)
+- **Cột mốc M2.1 (AI Launcher Hub):** Cổng khởi chạy tập trung hiển thị trực quan các dịch vụ AI được cấp phép, phân nhóm theo lĩnh vực (Lập trình, Sáng tạo nội dung, Phân tích dữ liệu, Thiết kế).
+- **Cột mốc M2.2 (Controlled Direct Access):** Cơ chế điều hướng và ủy quyền truy cập an toàn, giảm thiểu thao tác đăng nhập thủ công cho nhân viên.
+- **Cột mốc M2.3 (Usage Heartbeat):** Ghi nhận tần suất kích hoạt dịch vụ của nhân viên phục vụ đánh giá mức độ đón nhận công cụ trong doanh nghiệp.
+
+### Phase 3: Department Budget & Quota Governance (⏳ Chưa mở)
+- **Cột mốc M3.1 (Organization Hierarchy):** Quản lý cơ cấu tổ chức theo phòng ban và nhóm dự án (Engineering, Marketing, Product, Operations...).
+- **Cột mốc M3.2 (Department Budget Policy):** Thiết lập định mức chi phí AI hàng tháng cho từng phòng ban, ngăn chặn chi tiêu vượt tầm kiểm soát.
+- **Cột mốc M3.3 (Threshold Alerts):** Cảnh báo ngưỡng ngân sách tự động cho trưởng bộ phận khi mức sử dụng đạt 80% và 100%.
+- **Cột mốc M3.4 (Cost Allocation Report):** Báo cáo phân bổ chi phí AI minh bạch cho ban giám đốc và phòng kế toán.
+
+### Phase 4: Shared Credential Vault & Dynamic Session Broker (⏳ Chưa mở)
+- **Cột mốc M4.1 (Zero-Knowledge Shared Store):** Kho lưu trữ bảo mật thông tin đăng nhập dùng chung, mã hóa an toàn.
+- **Cột mốc M4.2 (Session Injection Broker):** Cơ chế chia sẻ phiên làm việc an toàn cho nhân viên mà không để lộ mật khẩu gốc của tài khoản doanh nghiệp.
+- **Cột mốc M4.3 (Automatic Credential Rotation):** Tự động thu hồi phiên và kích hoạt xoay vòng khóa bí mật theo chu kỳ bảo mật.
+- **Cột mốc M4.4 (Concurrency Management):** Giới hạn số lượng nhân viên truy cập đồng thời trên mỗi tài khoản bản quyền nhóm.
+
+### Phase 5: Enterprise Compliance & WORM Audit Analytics (⏳ Chưa mở)
+- **Cột mốc M5.1 (WORM Immutable Log):** Chuẩn hóa nhật ký kiểm toán bất biến (Write Once, Read Many), chống sửa đổi và giả mạo dữ liệu.
+- **Cột mốc M5.2 (Compliance Audit Export):** Xuất báo cáo kiểm toán định dạng chuẩn doanh nghiệp phục vụ đánh giá chứng chỉ ISO 27001 / SOC 2.
+- **Cột mốc M5.3 (Executive ROI Dashboard):** Biểu đồ phân tích hiệu quả đầu tư AI (ROI), đo lường thời gian tiết kiệm và mức độ ứng dụng AI toàn công ty.
+- **Cột mốc M5.4 (Data Retention Policy):** Quy chuẩn lưu trữ và xóa dữ liệu kiểm toán định kỳ theo luật an toàn thông tin.
+
+---
+
+## 4. Quy Tắc Điều Phối & Quản Trị Phạm Vi
 
 1. **Gate Condition Tuyệt Đối:** Các phase chưa mở (`⏳ Chưa mở`) chỉ mang tính định hướng giá trị kinh doanh. Tuyệt đối không đặc tả task kỹ thuật hay viết code giả lập trước cho phase tương lai.
 2. **Một Phase Thực Thi Duy Nhất:** Tại mọi thời điểm, chỉ có **duy nhất 1 Phase đang ở trạng thái `🚧`** và toàn bộ task breakdown chi tiết của nó được trình bày độc quyền tại tệp [PHASE.md](./PHASE.md).
