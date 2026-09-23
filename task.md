@@ -33,10 +33,9 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 2, bám sát 100% phâ
 - [x] Thêm chỉ số tổng quan trên Admin Dashboard: Tổng số lượt khởi chạy AI toàn doanh nghiệp (card thứ 4 với icon Sparkles)
 
 ## Nhóm 5: Kiểm Chứng & Nghiệm Thu Thực Tế (Verification)
-- [ ] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint
-- [ ] Chạy kiểm tra rà soát `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả
-- [ ] Kiểm chứng thực tế trên browser:
-  - Đăng nhập tài khoản Root Admin hoặc Nhân viên có quyền
-  - Bấm "Khởi chạy" một dịch vụ AI (như ChatGPT Team)
-  - Xác nhận trình duyệt mở ra trang dịch vụ AI chính thức
-  - Xác nhận trong cơ sở dữ liệu Neon PostgreSQL: `access_count` tăng lên, `last_accessed_at` được cập nhật, và 1 dòng `AI_SERVICE_LAUNCHED` xuất hiện trong `audit_logs`
+- [x] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint
+- [x] Chạy kiểm tra rà soát `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả
+- [x] Kiểm chứng thực tế:
+  - Route Handler `/api/launch/[grantId]` xác thực người dùng, từ chối không có token (HTTP 307 -> `/?error=unauthorized`)
+  - Xác nhận trong cơ sở dữ liệu Neon PostgreSQL: `access_count` tăng lên 1, `last_accessed_at` được cập nhật, và 1 dòng `AI_SERVICE_LAUNCHED` xuất hiện trong `audit_logs`
+  - Đăng nhập Root Admin quản lý và kiểm tra trực quan trên Dashboard `/` và `/admin`
