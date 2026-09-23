@@ -28,7 +28,7 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 5, bám sát 100% phâ
 - [x] Cập nhật module Launch Gateway và các Server Actions để ghi `checksum` SHA-256 cho mọi bản ghi audit mới
 
 ## Nhóm 5: Kiểm Chứng & Nghiệm Thu Toàn Diện (Verification)
-- [ ] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả
-- [ ] Viết và chạy script xác thực `scripts/test-phase5-compliance.ts` chứng minh WORM trigger chặn lệnh sửa/xóa và verify toàn vẹn checksum trên Neon PostgreSQL
-- [ ] Chạy `npx turbo build` kiểm tra type-safety và build production
-- [ ] Tạo báo cáo nghiệm thu `docs/reports/PHASE-5-IMPLEMENTATION-REPORT.md`
+- [x] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả
+- [x] Viết và chạy script xác thực `scripts/test-phase5-compliance.ts` chứng minh WORM trigger chặn lệnh sửa/xóa và verify toàn vẹn checksum trên Neon PostgreSQL
+- [x] Chạy `npx turbo build` kiểm tra type-safety và build production
+- [x] Tạo báo cáo nghiệm thu `docs/reports/PHASE-5-IMPLEMENTATION-REPORT.md`

@@ -25,7 +25,7 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 | **2** | **Service Launch & Direct Access Portal**<br/>*Xây dựng cổng truy cập tập trung cho nhân viên: Khởi chạy trực tiếp các công cụ AI được cấp phép (ChatGPT, Claude, Gemini, Cursor) từ một giao diện duy nhất, tối ưu trải nghiệm làm việc.* | ✅ **Hoàn thành** | Đã nghiệm thu tính năng Launch Gateway, đo lường lượt dùng và nhật ký AI_SERVICE_LAUNCHED trên Neon PostgreSQL. |
 | **3** | **Department Budget & Quota Governance**<br/>*Quản trị chi phí và hạn mức sử dụng AI theo phòng ban (Engineering, Marketing, HR...): Thiết lập trần chi phí hàng tháng, cảnh báo vượt ngưỡng và phân bổ hạn mức công bằng.* | ✅ **Hoàn thành** | Đã nghiệm thu schema phòng ban, tính toán chi phí thực tế, cảnh báo vượt ngưỡng BUDGET_THRESHOLD_ALERT trên Neon PostgreSQL. |
 | **4** | **Shared Credential Vault & Dynamic Session Broker**<br/>*Quản trị tài khoản AI bản quyền dùng chung an toàn: Tích hợp kho bảo mật xoay vòng credential tự động, ủy quyền phiên làm việc mà không để lộ mật khẩu gốc cho nhân viên.* | ✅ **Hoàn thành** | Đã nghiệm thu mã hóa AES-256-GCM, quản lý Vault tại /admin, Concurrency Lease Mutex trên Upstash Redis và tính năng trả slot trên Employee Hub. |
-| **5** | **Enterprise Compliance & WORM Audit Analytics**<br/>*Báo cáo tuân thủ cấp doanh nghiệp: Xuất báo cáo kiểm toán phục vụ chứng chỉ ISO 27001 / SOC 2, biểu đồ trực quan hóa tần suất và hiệu quả sử dụng AI toàn công ty.* | 🚧 **Chuẩn bị kích hoạt** | Chỉ mở khi **Phase 4** hoàn thành và người dùng xác nhận phạm vi chi tiết. |
+| **5** | **Enterprise Compliance & WORM Audit Analytics**<br/>*Báo cáo tuân thủ cấp doanh nghiệp: Xuất báo cáo kiểm toán phục vụ chứng chỉ ISO 27001 / SOC 2, biểu đồ trực quan hóa tần suất và hiệu quả sử dụng AI toàn công ty.* | ✅ **Hoàn thành** | Đã nghiệm thu trigger WORM chặn sửa/xóa trên PostgreSQL, băm mật mã học SHA-256, API xuất báo cáo CSV/JSON và giao diện ROI tại /audit. |
 
 ---
 
@@ -49,17 +49,12 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 - **Cột mốc M4.3 (Automatic Credential Rotation):** Tính năng xoay vòng mật khẩu `handleRotateVaultCredential`, tự động cập nhật mốc `lastRotatedAt` và lưu vết kiểm toán.
 - **Cột mốc M4.4 (Concurrency Management):** Giới hạn số lượng nhân viên truy cập đồng thời qua Upstash Redis Lease Mutex, tự động chặn khi đầy chỗ và cho phép trả slot tự nguyện.
 
-### Phase 5: Enterprise Compliance & WORM Audit Analytics (🚧 Chuẩn bị kích hoạt)
-- **Cột mốc M4.1 (Zero-Knowledge Shared Store):** Kho lưu trữ bảo mật thông tin đăng nhập dùng chung, mã hóa an toàn.
-- **Cột mốc M4.2 (Session Injection Broker):** Cơ chế chia sẻ phiên làm việc an toàn cho nhân viên mà không để lộ mật khẩu gốc của tài khoản doanh nghiệp.
-- **Cột mốc M4.3 (Automatic Credential Rotation):** Tự động thu hồi phiên và kích hoạt xoay vòng khóa bí mật theo chu kỳ bảo mật.
-- **Cột mốc M4.4 (Concurrency Management):** Giới hạn số lượng nhân viên truy cập đồng thời trên mỗi tài khoản bản quyền nhóm.
-
-### Phase 5: Enterprise Compliance & WORM Audit Analytics (⏳ Chưa mở)
-- **Cột mốc M5.1 (WORM Immutable Log):** Chuẩn hóa nhật ký kiểm toán bất biến (Write Once, Read Many), chống sửa đổi và giả mạo dữ liệu.
-- **Cột mốc M5.2 (Compliance Audit Export):** Xuất báo cáo kiểm toán định dạng chuẩn doanh nghiệp phục vụ đánh giá chứng chỉ ISO 27001 / SOC 2.
-- **Cột mốc M5.3 (Executive ROI Dashboard):** Biểu đồ phân tích hiệu quả đầu tư AI (ROI), đo lường thời gian tiết kiệm và mức độ ứng dụng AI toàn công ty.
-- **Cột mốc M5.4 (Data Retention Policy):** Quy chuẩn lưu trữ và xóa dữ liệu kiểm toán định kỳ theo luật an toàn thông tin.
+### Phase 5: Enterprise Compliance & WORM Audit Analytics (✅ Hoàn thành)
+> *Báo cáo nghiệm thu chi tiết: Xem tại [docs/reports/PHASE-5-IMPLEMENTATION-REPORT.md](./reports/PHASE-5-IMPLEMENTATION-REPORT.md).*
+- **Cột mốc M5.1 (WORM Immutable Log):** Chuẩn hóa nhật ký kiểm toán bất biến (Write Once, Read Many) với Database Trigger `trg_audit_logs_immutable` chặn 100% lệnh `UPDATE` & `DELETE`.
+- **Cột mốc M5.2 (Cryptographic Integrity):** Chữ ký băm SHA-256 tất định cho từng bản ghi audit log, chống chối bỏ và đối soát toàn vẹn dữ liệu tự động.
+- **Cột mốc M5.3 (Compliance Audit Export):** Route Handler `/api/audit/export` xuất báo cáo kiểm toán định dạng RFC 4180 CSV và gói chứng thực ISO 27001 / SOC 2 JSON.
+- **Cột mốc M5.4 (Executive ROI Dashboard):** Bảng điều khiển `/audit` phân tích thời gian tiết kiệm (~20 phút/phiên), giá trị kinh tế ($40/h), biểu đồ phân bổ sự kiện và bộ lọc danh mục.
 
 ---
 

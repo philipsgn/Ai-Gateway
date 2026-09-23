@@ -10,6 +10,7 @@ out/
 # Production build artifacts
 dist/
 build/
+*.tsbuildinfo
 
 # Environment variables
 .env
