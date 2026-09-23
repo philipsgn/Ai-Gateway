@@ -11,8 +11,8 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 2, bám sát 100% phâ
 - [x] Cập nhật script kiểm tra `scripts/verify-db.ts` hiển thị thông tin đo lường lượt dùng
 
 ## Nhóm 2: Launch Gateway & Kiểm Soát An Toàn (Security & Launch Gateway)
-- [ ] Định nghĩa bảng ánh xạ tài nguyên AI chuẩn (`resourceCatalog`) với URL chính thức, icon và danh mục
-- [ ] Xây dựng Server Action hoặc Route Handler khởi chạy an toàn:
+- [x] Định nghĩa bảng ánh xạ tài nguyên AI chuẩn (`resourceCatalog`) với URL chính thức, icon và danh mục
+- [x] Xây dựng Server Action hoặc Route Handler khởi chạy an toàn:
   - Kiểm tra xác thực phiên đăng nhập
   - Kiểm tra quyền sở hữu grant
   - Kiểm tra trạng thái `ACTIVE` và hạn sử dụng
