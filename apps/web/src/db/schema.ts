@@ -26,6 +26,7 @@ export const auditLogs = pgTable("audit_logs", {
   action: varchar("action", { length: 100 }).notNull(),
   targetId: varchar("target_id", { length: 255 }),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  checksum: varchar("checksum", { length: 64 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

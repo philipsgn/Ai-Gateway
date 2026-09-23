@@ -91,10 +91,27 @@ async function runMigration() {
         action VARCHAR(100) NOT NULL,
         target_id VARCHAR(255),
         metadata JSONB,
+        checksum VARCHAR(64),
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS checksum VARCHAR(64);
+
+      -- WORM Compliance (Write-Once-Read-Many): Prevent UPDATE and DELETE
+      CREATE OR REPLACE FUNCTION prevent_audit_log_modification()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        RAISE EXCEPTION 'WORM Violation: audit_logs records are immutable and cannot be updated or deleted.';
+      END;
+      $$ LANGUAGE plpgsql;
+
+      DROP TRIGGER IF EXISTS trg_audit_logs_immutable ON audit_logs;
+      CREATE TRIGGER trg_audit_logs_immutable
+      BEFORE UPDATE OR DELETE ON audit_logs
+      FOR EACH ROW
+      EXECUTE FUNCTION prevent_audit_log_modification();
     `);
-    console.log("  ✓ Table 'audit_logs' verified / created.");
+    console.log("  ✓ Table 'audit_logs' verified / created (with checksum & WORM trigger).");
 
     // 5. Create grants table
     await sql.unsafe(`
