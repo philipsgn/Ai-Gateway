@@ -23,8 +23,8 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 |:---:|---|:---:|---|
 | **1** | **Real Identity, Root Admin & Grants Matrix**<br/>*Thiết lập nền tảng định danh thật 100%, phân quyền Root Admin và cấp/thu hồi quyền truy cập AI có lưu vết kiểm toán.* | ✅ **Hoàn thành** | Đã nghiệm thu dữ liệu thực tế trên Neon PostgreSQL, Upstash Redis và Google OAuth. |
 | **2** | **Service Launch & Direct Access Portal**<br/>*Xây dựng cổng truy cập tập trung cho nhân viên: Khởi chạy trực tiếp các công cụ AI được cấp phép (ChatGPT, Claude, Gemini, Cursor) từ một giao diện duy nhất, tối ưu trải nghiệm làm việc.* | ✅ **Hoàn thành** | Đã nghiệm thu tính năng Launch Gateway, đo lường lượt dùng và nhật ký AI_SERVICE_LAUNCHED trên Neon PostgreSQL. |
-| **3** | **Department Budget & Quota Governance**<br/>*Quản trị chi phí và hạn mức sử dụng AI theo phòng ban (Engineering, Marketing, HR...): Thiết lập trần chi phí hàng tháng, cảnh báo vượt ngưỡng và phân bổ hạn mức công bằng.* | 🚧 **Đang triển khai** | Phase 2 đã hoàn thành nghiệm thu dữ liệu thật. |
-| **4** | **Shared Credential Vault & Dynamic Session Broker**<br/>*Quản trị tài khoản AI bản quyền dùng chung an toàn: Tích hợp kho bảo mật xoay vòng credential tự động, ủy quyền phiên làm việc mà không để lộ mật khẩu gốc cho nhân viên.* | ⏳ Chưa mở | Chỉ mở khi **Phase 3** hoàn thành, tổ chức có tài khoản bản quyền AI trả phí thực tế cần chia sẻ an toàn. |
+| **3** | **Department Budget & Quota Governance**<br/>*Quản trị chi phí và hạn mức sử dụng AI theo phòng ban (Engineering, Marketing, HR...): Thiết lập trần chi phí hàng tháng, cảnh báo vượt ngưỡng và phân bổ hạn mức công bằng.* | ✅ **Hoàn thành** | Đã nghiệm thu schema phòng ban, tính toán chi phí thực tế, cảnh báo vượt ngưỡng BUDGET_THRESHOLD_ALERT trên Neon PostgreSQL. |
+| **4** | **Shared Credential Vault & Dynamic Session Broker**<br/>*Quản trị tài khoản AI bản quyền dùng chung an toàn: Tích hợp kho bảo mật xoay vòng credential tự động, ủy quyền phiên làm việc mà không để lộ mật khẩu gốc cho nhân viên.* | 🚧 **Chuẩn bị kích hoạt** | Chỉ mở khi **Phase 3** hoàn thành và người dùng xác nhận phạm vi chi tiết. |
 | **5** | **Enterprise Compliance & WORM Audit Analytics**<br/>*Báo cáo tuân thủ cấp doanh nghiệp: Xuất báo cáo kiểm toán phục vụ chứng chỉ ISO 27001 / SOC 2, biểu đồ trực quan hóa tần suất và hiệu quả sử dụng AI toàn công ty.* | ⏳ Chưa mở | Chỉ mở khi **Phase 4** hoàn thành, dữ liệu kiểm toán hoạt động tích lũy trên 30 ngày và có nhu cầu xuất báo cáo tuân thủ thực tế. |
 
 ---
@@ -33,25 +33,20 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 
 Để định hình rõ giá trị nền tảng doanh nghiệp nhưng vẫn tuân thủ nguyên tắc không đặc tả mã nguồn sớm, mỗi giai đoạn được xác lập các cột mốc năng lực nghiệp vụ cấp cao như sau:
 
-### Phase 1: Real Identity, Root Admin & Grants Matrix (🚧 Đang nghiệm thu & Deploy)
-> *Task breakdown chi tiết: Xem độc quyền tại [docs/PHASE.md](./PHASE.md) và [task.md](../task.md).*
-- **Cột mốc M1.1:** Đăng nhập Single Sign-On (SSO) bằng Google OAuth 2.0 thật 100%.
-- **Cột mốc M1.2:** Cơ chế nhận diện tự động vai trò Quản trị viên tối cao (Root Administrator) và Nhân viên (Employee).
-- **Cột mốc M1.3:** Cổng Quản trị phân quyền (Admin Portal): Cấp quyền công cụ AI (ChatGPT, Claude, Gemini, Cursor) theo thời hạn và thu hồi quyền tức thì.
-- **Cột mốc M1.4:** Nhật ký kiểm toán minh bạch trên PostgreSQL thật và cơ chế bảo vệ tần suất bằng Upstash Redis.
+### Phase 1: Real Identity, Root Admin & Grants Matrix (✅ Hoàn thành)
+> *Báo cáo nghiệm thu chi tiết: Xem tại [docs/reports/PHASE-1-IMPLEMENTATION-REPORT.md](./reports/PHASE-1-IMPLEMENTATION-REPORT.md).*
 
 ### Phase 2: Service Launch & Direct Access Portal (✅ Hoàn thành)
-- **Cột mốc M2.1 (AI Launcher Hub):** Cổng khởi chạy tập trung hiển thị trực quan các dịch vụ AI được cấp phép, phân nhóm theo lĩnh vực (Lập trình, Sáng tạo nội dung, Phân tích dữ liệu, Thiết kế).
-- **Cột mốc M2.2 (Controlled Direct Access):** Cơ chế điều hướng và ủy quyền truy cập an toàn, giảm thiểu thao tác đăng nhập thủ công cho nhân viên.
-- **Cột mốc M2.3 (Usage Heartbeat):** Ghi nhận tần suất kích hoạt dịch vụ của nhân viên phục vụ đánh giá mức độ đón nhận công cụ trong doanh nghiệp.
+> *Báo cáo nghiệm thu chi tiết: Xem tại [docs/reports/PHASE-2-IMPLEMENTATION-REPORT.md](./reports/PHASE-2-IMPLEMENTATION-REPORT.md).*
 
-### Phase 3: Department Budget & Quota Governance (🚧 Chuẩn bị kích hoạt)
-- **Cột mốc M3.1 (Organization Hierarchy):** Quản lý cơ cấu tổ chức theo phòng ban và nhóm dự án (Engineering, Marketing, Product, Operations...).
-- **Cột mốc M3.2 (Department Budget Policy):** Thiết lập định mức chi phí AI hàng tháng cho từng phòng ban, ngăn chặn chi tiêu vượt tầm kiểm soát.
-- **Cột mốc M3.3 (Threshold Alerts):** Cảnh báo ngưỡng ngân sách tự động cho trưởng bộ phận khi mức sử dụng đạt 80% và 100%.
-- **Cột mốc M3.4 (Cost Allocation Report):** Báo cáo phân bổ chi phí AI minh bạch cho ban giám đốc và phòng kế toán.
+### Phase 3: Department Budget & Quota Governance (✅ Hoàn thành)
+> *Báo cáo nghiệm thu chi tiết: Xem tại [docs/reports/PHASE-3-IMPLEMENTATION-REPORT.md](./reports/PHASE-3-IMPLEMENTATION-REPORT.md).*
+- **Cột mốc M3.1 (Organization Hierarchy):** Quản lý cơ cấu tổ chức theo phòng ban (Engineering, Marketing...), mã code chuẩn và gán nhân viên vào phòng ban trên Neon DB.
+- **Cột mốc M3.2 (Department Budget Policy):** Thiết lập định mức chi phí AI hàng tháng cho từng phòng ban, tính toán chi phí tiêu hao thực tế từ số lượt launch và đơn giá catalog.
+- **Cột mốc M3.3 (Threshold Alerts):** Tự động phát hiện và ghi nhật ký kiểm toán `BUDGET_THRESHOLD_ALERT` khi mức sử dụng đạt ngưỡng 80% (Warning) hoặc >= 100% (Exceeded).
+- **Cột mốc M3.4 (Cost Allocation Transparency):** Bảng quản trị chi phí phòng ban trực quan tại `/admin` và thẻ ngân sách bộ phận minh bạch tại `/` cho nhân viên.
 
-### Phase 4: Shared Credential Vault & Dynamic Session Broker (⏳ Chưa mở)
+### Phase 4: Shared Credential Vault & Dynamic Session Broker (🚧 Chuẩn bị kích hoạt)
 - **Cột mốc M4.1 (Zero-Knowledge Shared Store):** Kho lưu trữ bảo mật thông tin đăng nhập dùng chung, mã hóa an toàn.
 - **Cột mốc M4.2 (Session Injection Broker):** Cơ chế chia sẻ phiên làm việc an toàn cho nhân viên mà không để lộ mật khẩu gốc của tài khoản doanh nghiệp.
 - **Cột mốc M4.3 (Automatic Credential Rotation):** Tự động thu hồi phiên và kích hoạt xoay vòng khóa bí mật theo chu kỳ bảo mật.

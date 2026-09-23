@@ -28,7 +28,7 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 3, bám sát 100% phâ
 - [x] Cảnh báo trạng thái ngân sách phòng ban và đơn giá ước tính trên thẻ khởi chạy công cụ AI
 
 ## Nhóm 5: Kiểm Chứng & Nghiệm Thu Thực Tế (Verification)
-- [ ] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint
-- [ ] Chạy kiểm tra rà soát `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả
-- [ ] Tạo phòng ban mẫu (`Engineering`, `Marketing`), gán nhân viên vào phòng ban trên Neon PostgreSQL
-- [ ] Khởi chạy công cụ AI, xác nhận chi phí phòng ban tăng lên tương ứng và audit log được lưu vết
+- [x] Chạy `npx turbo build` xác nhận zero lỗi TypeScript / Lint
+- [x] Chạy kiểm tra rà soát `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả
+- [x] Tạo phòng ban mẫu (`Engineering`, `Marketing`), gán nhân viên vào phòng ban trên Neon PostgreSQL
+- [x] Khởi chạy công cụ AI, xác nhận chi phí phòng ban tăng lên tương ứng và audit log được lưu vết
