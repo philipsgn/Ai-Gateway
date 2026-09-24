@@ -3,6 +3,15 @@ import Google from "next-auth/providers/google";
 import { db, employees } from "./db";
 import { logAuditEvent } from "./lib/audit";
 
+const authSecret =
+  process.env.AUTH_SECRET ||
+  process.env.NEXTAUTH_SECRET ||
+  "enterprise-ai-default-auth-secret-key-32b";
+
+if (!process.env.AUTH_SECRET) {
+  process.env.AUTH_SECRET = authSecret;
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   providers: [
@@ -14,7 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  secret: authSecret,
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google" && profile) {

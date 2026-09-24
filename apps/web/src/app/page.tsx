@@ -128,17 +128,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         const [synced] = await db
           .insert(employees)
           .values({
-            googleSub: (session.user as any).googleSub || `google-${email}`,
+            googleSub: (session.user as any)?.googleSub || `google-${email}`,
             email,
-            name: session.user.name || "Employee",
-            avatarUrl: session.user.image || "",
+            name: session.user?.name || "Employee",
+            avatarUrl: session.user?.image || "",
             role: isRootAdmin ? "ROOT_ADMIN" : "EMPLOYEE",
           })
           .onConflictDoUpdate({
             target: employees.email,
             set: {
-              name: session.user.name || "Employee",
-              avatarUrl: session.user.image || "",
+              name: session.user?.name || "Employee",
+              avatarUrl: session.user?.image || "",
               ...(isRootAdmin ? { role: "ROOT_ADMIN" } : {}),
             },
           })
@@ -281,7 +281,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {/* --------------------------------------------------------------------- */}
       {/* CASE 1: USER IS NOT AUTHENTICATED (Sign In Hero View)                  */}
       {/* --------------------------------------------------------------------- */}
-      {!session ? (
+      {!session?.user ? (
         <div className="space-y-12 my-6">
           {/* Main Hero Card */}
           <div className="card-cream p-8 sm:p-12 text-center space-y-6 relative overflow-hidden bg-gradient-to-b from-white to-cream-50">
@@ -395,12 +395,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   {dbEmployee?.avatarUrl ? (
                     <img
                       src={dbEmployee.avatarUrl}
-                      alt={dbEmployee.name || "User"}
+                      alt={dbEmployee.name || session?.user?.name || "User"}
                       className="w-16 h-16 rounded-2xl object-cover border-2 border-mint-300 shadow-sm"
                     />
                   ) : (
                     <div className="w-16 h-16 rounded-2xl bg-mint-500 text-white flex items-center justify-center font-bold text-xl shadow-mint">
-                      {(dbEmployee?.name || session.user.name || "U")[0].toUpperCase()}
+                      {(dbEmployee?.name || session?.user?.name || "U")[0].toUpperCase()}
                     </div>
                   )}
                   <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-mint-500 border-2 border-white" title="Trực tuyến" />
@@ -409,7 +409,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-xl sm:text-2xl font-bold text-ink-900 tracking-tight">
-                      {dbEmployee?.name || session.user.name || "Nhân viên"}
+                      {dbEmployee?.name || session?.user?.name || "Nhân viên"}
                     </h1>
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border ${
@@ -423,7 +423,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   </div>
 
                   <p className="text-xs text-ink-500 font-mono">
-                    {dbEmployee?.email || session.user.email}
+                    {dbEmployee?.email || session?.user?.email}
                   </p>
 
                   <div className="flex items-center gap-2 pt-1 text-xs text-ink-600">
