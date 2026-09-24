@@ -26,6 +26,7 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 | **3** | **Department Budget & Quota Governance**<br/>*Quản trị chi phí và hạn mức sử dụng AI theo phòng ban (Engineering, Marketing, HR...): Thiết lập trần chi phí hàng tháng, cảnh báo vượt ngưỡng và phân bổ hạn mức công bằng.* | ✅ **Hoàn thành** | Đã nghiệm thu schema phòng ban, tính toán chi phí thực tế, cảnh báo vượt ngưỡng BUDGET_THRESHOLD_ALERT trên Neon PostgreSQL. |
 | **4** | **Shared Credential Vault & Dynamic Session Broker**<br/>*Quản trị tài khoản AI bản quyền dùng chung an toàn: Tích hợp kho bảo mật xoay vòng credential tự động, ủy quyền phiên làm việc mà không để lộ mật khẩu gốc cho nhân viên.* | ✅ **Hoàn thành** | Đã nghiệm thu mã hóa AES-256-GCM, quản lý Vault tại /admin, Concurrency Lease Mutex trên Upstash Redis và tính năng trả slot trên Employee Hub. |
 | **5** | **Enterprise Compliance & WORM Audit Analytics**<br/>*Báo cáo tuân thủ cấp doanh nghiệp: Xuất báo cáo kiểm toán phục vụ chứng chỉ ISO 27001 / SOC 2, biểu đồ trực quan hóa tần suất và hiệu quả sử dụng AI toàn công ty.* | ✅ **Hoàn thành** | Đã nghiệm thu trigger WORM chặn sửa/xóa trên PostgreSQL, băm mật mã học SHA-256, API xuất báo cáo CSV/JSON và giao diện ROI tại /audit. |
+| **6** | **Enterprise Production Transformation & Mint-Cream UI/UX Overhaul**<br/>*Chuyển đổi toàn diện sản phẩm thành bản Production thương mại: Áp dụng hệ thiết kế Mint & Cream cao cấp, loại bỏ hoàn toàn các khung debug/sandbox, hoàn thiện trải nghiệm yêu cầu cấp quyền và tối ưu luồng người dùng.* | 🚧 **Đang triển khai** | Kích hoạt theo yêu cầu người dùng sau khi hoàn tất nền tảng kỹ thuật 5 Phase. |
 
 ---
 
@@ -55,6 +56,12 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 - **Cột mốc M5.2 (Cryptographic Integrity):** Chữ ký băm SHA-256 tất định cho từng bản ghi audit log, chống chối bỏ và đối soát toàn vẹn dữ liệu tự động.
 - **Cột mốc M5.3 (Compliance Audit Export):** Route Handler `/api/audit/export` xuất báo cáo kiểm toán định dạng RFC 4180 CSV và gói chứng thực ISO 27001 / SOC 2 JSON.
 - **Cột mốc M5.4 (Executive ROI Dashboard):** Bảng điều khiển `/audit` phân tích thời gian tiết kiệm (~20 phút/phiên), giá trị kinh tế ($40/h), biểu đồ phân bổ sự kiện và bộ lọc danh mục.
+
+### Phase 6: Enterprise Production Transformation & Mint-Cream UI/UX Overhaul (🚧 Đang triển khai)
+- **Cột mốc M6.1 (Mint & Cream Design Tokens & Theme Engine):** Tái cấu trúc Tailwind và CSS sang bảng màu kem ấm và xanh ngọt ngào cao cấp (`#FAF7F2`, `#10B981`, `#ECFDF5`).
+- **Cột mốc M6.2 (Clean Production Navigation & Layout):** Loại bỏ 100% bảng hiển thị debug PostgreSQL, câu lệnh SQL và thông báo kỹ thuật nội bộ khỏi giao diện người dùng.
+- **Cột mốc M6.3 (Employee Workspace & Self-Service Catalog):** Nâng cấp trang chủ `/` thành không gian làm việc AI danh giá với thẻ công cụ tương tác, chỉ số cá nhân, và tính năng "Yêu cầu cấp quyền (Request Access)" tự phục vụ khi chưa có quyền.
+- **Cột mốc M6.4 (Executive Admin Portal & Compliance Polish):** Tái thiết kế toàn bộ `/admin` và `/audit` theo chuẩn thẩm mỹ Senior Fullstack Developer, mang lại trải nghiệm SaaS thương mại đẳng cấp.
 
 ---
 

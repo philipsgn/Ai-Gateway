@@ -35,12 +35,12 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 6, bám sát 100% phâ
   - [x] Nút xuất nhanh báo cáo tuân thủ CSV
 
 ## Nhóm 5: Trung Tâm Tuân Thủ & Phân Tích ROI (`apps/web/src/app/audit/page.tsx`)
-- [ ] Tái thiết kế trang Kiểm toán Tuân thủ:
-  - Chứng nhận WORM Immutability với thiết kế trang trọng, chuẩn mực
-  - Thước đo toàn vẹn Checksum SHA-256 (100% Verified)
-  - Thẻ tính toán ROI doanh nghiệp (Thời gian tiết kiệm, giá trị kinh tế)
-  - Thanh phân bổ sự kiện màu pastel và bộ lọc sự kiện trực quan
-  - Nút xuất CSV (RFC 4180) và ISO 27001 / SOC 2 JSON
+- [x] Tái thiết kế trang Kiểm toán Tuân thủ:
+  - [x] Chứng nhận WORM Immutability với thiết kế trang trọng, chuẩn mực
+  - [x] Thước đo toàn vẹn Checksum SHA-256 (100% Verified)
+  - [x] Thẻ tính toán ROI doanh nghiệp (Thời gian tiết kiệm, giá trị kinh tế)
+  - [x] Thanh phân bổ sự kiện màu pastel và bộ lọc sự kiện trực quan
+  - [x] Nút xuất CSV (RFC 4180) và ISO 27001 / SOC 2 JSON
 
 ## Nhóm 6: Kiểm Chứng Toàn Diện & Nghiệm Thu
 - [ ] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`

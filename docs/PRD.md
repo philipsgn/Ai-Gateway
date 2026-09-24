@@ -1,68 +1,93 @@
 # Product Requirements Document (PRD)
-## Enterprise AI Access Management System
+## Enterprise AI Access Management System — Production Edition
 
 ---
 
-## 1. Vấn Đề Thực Tế (Problem Statement)
+## 1. Tầm Nhìn Sản Phẩm & Bài Toán Nghiệp Vụ (Vision & Problem Statement)
 
-Trong môi trường doanh nghiệp hiện nay, nhu cầu sử dụng các công cụ trí tuệ nhân tạo (như ChatGPT, Claude, Gemini, Cursor) đang bùng nổ. Tuy nhiên, các tổ chức đối mặt với những rủi ro vận hành và bảo mật nghiêm trọng:
+Trong môi trường doanh nghiệp hiện đại, việc ứng dụng trí tuệ nhân tạo (Generative AI) là bắt buộc để gia tăng năng suất. Tuy nhiên, việc trang bị và quản trị các công cụ AI (ChatGPT Enterprise/Team, Claude, Gemini Advanced, Cursor Pro...) đang tạo ra nhiều rủi ro lớn:
 
-1. **Chia sẻ tài khoản bừa bãi:** Nhân viên thường dùng chung tài khoản hoặc mật khẩu chia sẻ qua ứng dụng chat nội bộ, gây nguy cơ rò rỉ dữ liệu doanh nghiệp.
-2. **Thiếu khả năng phân quyền tập trung:** Quản lý không nắm được chính xác nhân viên nào đang được phép sử dụng công cụ AI nào, hạn mức và thời hạn đến khi nào.
-3. **Mất dấu vết kiểm toán (Audit Trail):** Khi xảy ra sự cố dữ liệu hoặc cần rà soát chi phí, tổ chức không có nhật ký lưu lại ai đã truy cập, ai đã cấp quyền và vào thời điểm nào.
-4. **Không thể thu hồi quyền tức thời:** Khi nhân viên thay đổi dự án hoặc nghỉ việc, quyền truy cập vào các công cụ AI trả phí không được ngắt kịp thời.
+1. **Rò rỉ bảo mật & Chia sẻ mật khẩu tùy tiện:** Nhân viên dùng chung tài khoản qua chat nội bộ, vi phạm điều khoản nhà cung cấp và rò rỉ dữ liệu nhạy cảm.
+2. **Mất kiểm soát ngân sách & Chi phí ẩn:** Các phòng ban chi tiêu tự phát, không có trần ngân sách hoặc cảnh báo vượt hạn mức thời gian thực.
+3. **Thiếu khả năng ủy quyền phiên an toàn:** Doanh nghiệp trả phí bản quyền nhóm nhưng không thể điều phối số ghế (seats) đồng thời, dẫn đến nghẽn truy cập hoặc lãng phí license.
+4. **Vi phạm tiêu chuẩn kiểm toán doanh nghiệp (Compliance Deficit):** Thiếu nhật ký bất biến (WORM), không có bằng chứng chống sửa đổi cho các kỳ thanh tra ISO 27001, SOC 2.
+5. **Trải nghiệm vụng về, mang tính thử nghiệm (Prototype UX):** Giao diện trước đây mang nặng tính chất kiểm thử kỹ thuật (hiển thị bảng DB, câu lệnh SQL, thông báo lỗi nội bộ), chưa đạt tiêu chuẩn sản phẩm thương mại cho người dùng cuối.
+
+**Giải pháp:** Xây dựng một **Nền tảng Quản trị & Phân quyền AI Doanh nghiệp Hoàn chỉnh (Enterprise AI Access & Governance Platform)** đạt chuẩn thương phẩm (Production SaaS), sở hữu ngôn ngữ thiết kế **Mint & Cream** cao cấp, tinh tế, loại bỏ 100% dấu vết thử nghiệm, mang lại trải nghiệm mượt mà cho cả Nhân viên và Quản trị viên.
 
 ---
 
-## 2. Đối Tượng Người Dùng (Target Personas)
+## 2. Đối Tượng Người Dùng & Hành Trình Trải Nghiệm (Target Personas & UX Journeys)
 
 ### 2.1. Nhân viên doanh nghiệp (Employee)
-- **Mong muốn:** Đăng nhập nhanh chóng, an toàn bằng tài khoản Google công việc của chính mình (Single Sign-On).
-- **Trải nghiệm:** Xem rõ ràng danh sách các công cụ AI mà tổ chức đã phê duyệt và cấp quyền cho mình, sẵn sàng sử dụng trong công việc hàng ngày mà không cần hỏi xin mật khẩu dùng chung.
+- **Định danh nhanh chóng:** Đăng nhập 1-click qua Google OAuth (SSO) doanh nghiệp.
+- **Không gian làm việc AI cá nhân hóa:**
+  - Nhận diện tức thời phòng ban, hạn mức ngân sách được phân bổ và số công cụ được cấp quyền.
+  - Khởi chạy dịch vụ AI an toàn qua Gateway chỉ với 1 click mà không cần biết mật khẩu gốc.
+  - Quản lý phiên làm việc dùng chung (giữ ghế / chủ động trả ghế cho đồng nghiệp).
+  - Tự động hiển thị Danh mục công cụ doanh nghiệp (Catalog) với tính năng **"Yêu cầu cấp quyền (Request Access)"** khi chưa có quyền, thay vì màn hình trống hoặc thông báo kỹ thuật.
 
-### 2.2. Quản trị viên hệ thống (Root Administrator)
-- **Mong muốn:** Quản lý tập trung toàn bộ danh bạ nhân sự và quyền sử dụng dịch vụ AI.
-- **Trải nghiệm:** Truy cập Cổng Quản Trị để cấp quyền cho nhân viên theo từng công cụ cụ thể (kèm thời hạn nếu có), thu hồi quyền ngay lập tức khi cần, và tra cứu nhật ký kiểm toán minh bạch của toàn hệ thống.
-
----
-
-## 3. Phạm Vi Sản Phẩm Hiện Tại (Current Scope)
-
-Hệ thống hiện tại tập trung hoàn toàn vào luồng nghiệp vụ cốt lõi, trung thực và chạy trên hạ tầng thực tế 100%:
-
-1. **Đăng nhập định danh thực tế:** Người dùng đăng nhập trực tiếp bằng tài khoản Google cá nhân hoặc doanh nghiệp thông qua giao thức chuẩn Google OAuth 2.0.
-2. **Nhận diện vai trò tự động:** Hệ thống tự động nhận diện tài khoản Quản trị viên tối cao (Root Administrator) dựa trên email quản trị đã định cấu hình. Tất cả người dùng còn lại mặc định nhận vai trò Nhân viên (Employee).
-3. **Cổng Quản Trị phân quyền (Admin Portal):**
-   - Chỉ cho phép Quản trị viên truy cập; chặn mọi hành vi truy cập trái phép từ phía nhân viên với thông báo từ chối truy cập rõ ràng.
-   - Hiển thị danh bạ toàn bộ nhân viên đã từng tham gia hệ thống.
-   - Biểu mẫu cấp quyền sử dụng dịch vụ AI (chọn nhân viên, chọn công cụ như ChatGPT, Claude, Gemini, Cursor; chọn thời hạn hiệu lực).
-   - Danh sách theo dõi trạng thái các quyền đã cấp và nút thu hồi quyền tức thì.
-4. **Trang tổng quan cho nhân viên (Employee Dashboard):**
-   - Hiển thị thông tin hồ sơ cá nhân đã được xác thực từ cơ sở dữ liệu.
-   - Hiển thị danh mục các dịch vụ AI đang ở trạng thái kích hoạt mà nhân viên được phép sử dụng.
-5. **Nhật ký kiểm toán minh bạch (Audit Logging):** Tự động ghi lại các sự kiện quan trọng (đăng nhập, cấp quyền, thu hồi quyền) với thời gian, người thực hiện và đối tượng nhận tác động.
-6. **Bảo vệ an toàn tần suất (Rate Limiting):** Tự động giới hạn số lần yêu cầu đăng nhập trên mỗi địa chỉ mạng nhằm bảo vệ hệ thống khỏi các hành vi lạm dụng.
+### 2.2. Quản trị viên cấp cao (Root Administrator)
+- **Cổng điều hành trung tâm (Executive Admin Portal):**
+  - Giám sát toàn cảnh: Số nhân sự, số lượng dịch vụ cấp phép, chi tiêu thực tế của các phòng ban so với trần ngân sách.
+  - Quản lý Kho bản quyền dùng chung (Shared Vault) với mã hóa AES-256-GCM, giới hạn số ghế đồng thời (Concurrency Leases Mutex trên Redis) và cơ chế xoay vòng mật khẩu.
+  - Cấp phát và thu hồi quyền truy cập tức thời (Instant Provisioning & Revocation).
+  - Xuất báo cáo kiểm toán tuân thủ (RFC 4180 CSV & ISO 27001 / SOC 2 JSON) chỉ với 1 thao tác.
 
 ---
 
-## 4. Ngoài Phạm Vi Hiện Tại (Explicit Non-Goals)
+## 3. Tiêu Chuẩn Thiết Kế & Ngôn Ngữ Trực Quan (Mint & Cream Design System)
 
-Những tính năng dưới đây được **chủ động hoãn lại** để giữ hệ thống gọn gàng, trung thực và chỉ mở ra khi có nhu cầu cùng điều kiện thực tế tương ứng:
+Sản phẩm được định hình lại toàn diện về mặt thẩm mỹ theo phong cách **High-End Enterprise SaaS (Linear / Notion / Stripe Aesthetic)**:
 
-| Tính năng ngoài phạm vi | Lý do hoãn có chủ đích | Điều kiện để mở lại |
-|---|---|---|
-| **Kho bí mật & Quản lý API Key (Vault/SecretStore)** | Hệ thống hiện tại chỉ quản lý danh tính và quyền hạn, chưa trực tiếp lưu giữ khóa bí mật bên thứ ba. | Khi có credential trả phí thực tế cần cơ chế xoay vòng và bảo mật phần cứng. |
-| **Đồng bộ tự động tài khoản AI (SSO/SCIM với OpenAI, Anthropic)** | Các nhà cung cấp AI chỉ mở giao thức SCIM/Admin API cho gói doanh nghiệp lớn (Enterprise). | Khi có tài khoản hợp đồng Enterprise thực tế để kiểm thử API chính thức. |
-| **Kho tài khoản dùng chung (Seat Pooling / Lease Mutex)** | Triết lý hiện tại khuyến khích cấp quyền minh bạch theo từng cá nhân, không cổ vũ việc lách cơ chế chia sẻ tài khoản. | Khi xuất hiện mô hình chia sẻ tài khoản có kiểm soát được phê duyệt. |
-| **Ứng dụng mở rộng trình duyệt (Browser Extension)** | Trọng tâm là nền tảng quản trị web trực tiếp, không phụ thuộc vào tiện ích cài thêm trên máy người dùng. | Khi quy trình ủy quyền trên web đã hoàn toàn ổn định và được người dùng yêu cầu. |
+* **Tông màu chủ đạo (Color Palette):**
+  * **Kem & Ngà Ấm (Warm Cream / Ivory / Alabaster):**
+    * Nền trang (Canvas): `#FDFBF7` / `#FAF7F2`
+    * Bề mặt thẻ (Surface / Cards): `#FFFFFF` với viền kem nhẹ `#EFE8DC`
+    * Bề mặt phụ (Sub-panels): `#F5F0E8`
+  * **Xanh nhạt, Xanh ngọt & Ngọc Bích (Pastel Mint / Sweet Sage / Aqua Emerald):**
+    * Điểm nhấn thương hiệu (Brand Accent): `#10B981` (Emerald), `#059669` (Dark Mint)
+    * Nền trạng thái / Badge: `#ECFDF5` (Mint Cream), `#D1FAE5` (Soft Mint)
+    * Đường viền điểm nhấn: `#A7F3D0` / `#6EE7B7`
+  * **Độ tương phản chữ (Typography & Contrast):**
+    * Tiêu đề & Văn bản chính: Deep Slate Coffee `#1F2937` / `#111827` (dễ đọc, sang trọng)
+    * Văn bản phụ (Muted): Warm Charcoal `#6B7280` / `#4B5563`
+* **Hình khối & Tương tác:**
+  * Bo góc mềm mại (`rounded-2xl`, `rounded-xl`).
+  * Đổ bóng phân tầng tinh tế (`shadow-sm`, `shadow-[0_8px_30px_rgb(0,0,0,0.04)]`).
+  * Phản hồi tương tác vi mô (micro-interactions, smooth hover transitions, feedback toast).
+* **Tuyệt đối không còn yếu tố Prototype:**
+  * Xóa bỏ hoàn toàn các khung "CHI TIẾT BẢN GHI POSTGRESQL (TABLE: EMPLOYEES)", "Dữ liệu được truy vấn THẬT", các câu lệnh SQL hay hướng dẫn sửa lỗi cấu hình môi trường hiển thị cho người dùng.
 
 ---
 
-## 5. Tiêu Chí Thành Công Của Sản Phẩm (Success Metrics)
+## 4. Phạm Vi Nâng Cấp Thành Bản Production (Phase 6 Scope)
 
-Sản phẩm được xác nhận đạt yêu cầu khi thỏa mãn toàn bộ các điều kiện đo lường thực tế sau:
+1. **Mint & Cream Design System & Typography:**
+   - Thay thế theme tối bằng hệ màu Kem ấm kết hợp Xanh ngọt ngào (Pastel Mint & Warm Cream).
+   - Thiết lập các component chuẩn doanh nghiệp: Navigation Bar, Profile Dropdown, Stat Cards, Tool Cards, Badges, Modals.
+2. **Trải Nghiệm Nhân Viên Hoàn Chỉnh (Employee Experience):**
+   - Khu vực "AI Workspace" với các công cụ đã được cấp phép.
+   - Khu vực "AI Catalog & Self-Service" cho phép gửi yêu cầu cấp quyền ngay khi tài khoản mới tạo.
+   - Đồng bộ trạng thái session tự động nếu người dùng có session hợp lệ nhưng dữ liệu chưa liên kết.
+3. **Cổng Quản Trị Doanh Nghiệp Tinh Hoa (Admin Portal Experience):**
+   - Thiết kế lại 4 trụ cột: Ngân sách phòng ban, Kho mật mã Vault, Ma trận phân quyền, Báo cáo kiểm toán theo phong cách Mint & Cream.
+   - Bộ lọc, tìm kiếm nhân viên và quản lý linh hoạt.
+4. **Trung Tâm Tuân Thủ & Phân Tích ROI (Compliance & ROI Center):**
+   - Bảng chứng nhận WORM Immutability chuẩn ISO 27001.
+   - Chỉ số toàn vẹn SHA-256 100% với giao diện thẩm mỹ cao.
+   - Bộ xuất file báo cáo tiện lợi.
+5. **Kiểm Thử & Đóng Gói Production:**
+   - Đảm bảo 100% không mock class (`git grep -i "Mock"` = 0).
+   - `npx turbo build` thành công mã thoát 0.
+   - Deploy mượt mà trên Vercel với trải nghiệm hoàn thiện.
 
-1. **Khả năng tiếp cận công khai:** Bất kỳ ai từ Internet bấm vào liên kết triển khai công khai đều mở được ứng dụng với chứng chỉ bảo mật HTTPS hợp lệ.
-2. **Xác thực thực tế thành công:** Một người dùng ngoài đời thực đăng nhập bằng tài khoản Google thật của họ và thấy dữ liệu hồ sơ cá nhân xuất hiện chính xác.
-3. **Phân quyền hoạt động trơn tru:** Quản trị viên cấp quyền thành công cho một nhân viên; nhân viên đó sau khi đăng nhập nhìn thấy đúng dịch vụ AI vừa được cấp trên giao diện của mình.
-4. **Không có bất kỳ dữ liệu hay thành phần giả lập nào:** Toàn bộ dữ liệu hiển thị trên ứng dụng được truy vấn trực tiếp từ cơ sở dữ liệu đám mây thực tế.
+---
+
+## 5. Tiêu Chí Nghiệm Thu (Definition of Done)
+
+1. Giao diện trực quan mang đúng tông màu **Kem ấm (#FAF7F2)** và **Xanh ngọt ngào (#10B981, #ECFDF5)**.
+2. 100% nội dung debug/sandbox bị loại bỏ khỏi giao diện người dùng.
+3. Người dùng mới chưa có quyền được chào đón bằng Catalog công cụ đẹp mắt và nút "Yêu cầu cấp quyền" tiện ích.
+4. Mọi tính năng cốt lõi (OAuth, Launch Gateway, Upstash Redis Mutex, Vault AES-256-GCM, WORM Trigger) tiếp tục hoạt động chính xác 100% trên hạ tầng thật.
+5. Kiểm tra build `npx turbo build` đạt mã 0, không có bất kỳ cảnh báo type hay lint nghiêm trọng nào.

@@ -8,18 +8,17 @@ import {
   ArrowLeft,
   Clock,
   Activity,
-  Database,
   CheckCircle,
   AlertCircle,
   ShieldCheck,
   Download,
   DollarSign,
   TrendingUp,
-  Cpu,
-  KeyRound,
-  Users,
-  Layers,
   Filter,
+  CheckCircle2,
+  Lock,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +58,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
   // --- Category Classification Helper ---
   const categorizeAction = (action: string): "gateway" | "grants" | "auth" | "system" => {
     const act = (action || "").toUpperCase();
-    if (act.includes("LAUNCH") || act.includes("TOKEN") || act.includes("SESSION")) return "gateway";
+    if (act.includes("LAUNCH") || act.includes("TOKEN") || act.includes("SESSION") || act.includes("CONCURRENCY")) return "gateway";
     if (act.includes("GRANT") || act.includes("REQUEST")) return "grants";
     if (act.includes("LOGIN") || act.includes("USER") || act.includes("AUTH")) return "auth";
     return "system";
@@ -98,56 +97,58 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      {/* Top Header & Navigation */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-              title="Quay lại Dashboard"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <ShieldCheck className="w-7 h-7 text-indigo-400" />
-              Tuân Thủ & Kiểm Toán Bất Biến (WORM Audit)
-            </h1>
+      {/* Top Header & Navigation Banner */}
+      <div className="card-cream p-6 sm:p-8 bg-gradient-to-r from-white via-cream-50 to-mint-50/40 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/"
+                className="p-2 rounded-xl bg-white hover:bg-cream-100 text-ink-600 border border-cream-300 transition-colors shadow-sm"
+                title="Quay lại Không Gian Làm Việc"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-900 flex items-center gap-2.5">
+                <ShieldCheck className="w-7 h-7 text-mint-600" />
+                Tuân Thủ & Kiểm Toán Bất Biến (WORM Audit)
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-ink-600 mt-2 pl-10 max-w-2xl leading-relaxed">
+              Hồ sơ kiểm toán chuẩn ISO/IEC 27001 & SOC 2 Type II với chính sách Write-Once-Read-Many (WORM) thực thi tại tầng PostgreSQL Database Trigger và mã băm SHA-256 bất biến.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 pl-8">
-            Hồ sơ kiểm toán chuẩn ISO 27001 / SOC 2 Type II với chính sách Write-Once-Read-Many (WORM) và mã băm SHA-256 bất biến.
-          </p>
-        </div>
 
-        {/* Quick Export Action Buttons */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <a
-            href="/api/audit/export?format=csv"
-            download
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
-          >
-            <Download className="w-3.5 h-3.5 text-sky-400" />
-            Xuất CSV (RFC 4180)
-          </a>
-          <a
-            href="/api/audit/export?format=json"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-md shadow-indigo-500/20"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            ISO 27001 / SOC 2 JSON
-          </a>
+          {/* Quick Export Action Buttons */}
+          <div className="flex items-center gap-2.5 flex-wrap self-stretch sm:self-auto justify-end">
+            <a
+              href="/api/audit/export?format=csv"
+              download
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white text-ink-700 border border-cream-300 hover:bg-cream-100 transition-all shadow-sm"
+            >
+              <Download className="w-3.5 h-3.5 text-mint-600" />
+              <span>Xuất CSV (RFC 4180)</span>
+            </a>
+            <a
+              href="/api/audit/export?format=json"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-mint-600 text-white hover:bg-mint-500 transition-all shadow-mint"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Gói ISO 27001 / SOC 2 JSON</span>
+            </a>
+          </div>
         </div>
       </div>
 
       {/* Database Error Banner */}
       {dbError && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
           <div>
             <p className="font-semibold">Lỗi truy vấn cơ sở dữ liệu kiểm toán</p>
-            <p className="text-rose-300/80 mt-0.5">{dbError}</p>
+            <p className="text-rose-700 mt-0.5">{dbError}</p>
           </div>
         </div>
       )}
@@ -155,41 +156,41 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: WORM Status */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
+        <div className="card-cream p-5 bg-white flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Trạng Thái WORM</span>
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <span className="text-xs font-semibold text-ink-600">Trạng Thái WORM</span>
+            <div className="p-1.5 rounded-lg bg-mint-50 text-mint-600 border border-mint-200">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-emerald-400 font-mono">BẢO VỆ 100%</span>
+              <span className="text-xl font-bold text-mint-700 font-mono">BẢO VỆ 100%</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-ink-500 mt-1">
               Trigger PostgreSQL chặn toàn bộ UPDATE & DELETE
             </p>
           </div>
         </div>
 
         {/* Card 2: Cryptographic Integrity */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
+        <div className="card-cream p-5 bg-white flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Toàn Vẹn Checksum</span>
-            <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400">
+            <span className="text-xs font-semibold text-ink-600">Toàn Vẹn Checksum</span>
+            <div className="p-1.5 rounded-lg bg-mint-50 text-mint-600 border border-mint-200">
               <CheckCircle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-sky-400 font-mono">
+              <span className="text-xl font-bold text-mint-700 font-mono">
                 {integrityReport.integrityRate}%
               </span>
-              <span className="text-[10px] text-slate-500 font-mono">
+              <span className="text-[10px] text-ink-400 font-mono">
                 ({integrityReport.signedRecords} ký / {integrityReport.totalRecords} bản ghi)
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-ink-500 mt-1">
               {integrityReport.tamperedRecords === 0
                 ? "Không phát hiện sai lệch SHA-256"
                 : `Cảnh báo: ${integrityReport.tamperedRecords} sai lệch!`}
@@ -198,93 +199,93 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
         </div>
 
         {/* Card 3: ROI Time Saved */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
+        <div className="card-cream p-5 bg-white flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Thời Gian Tiết Kiệm</span>
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+            <span className="text-xs font-semibold text-ink-600">Thời Gian Tiết Kiệm</span>
+            <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600 border border-amber-200">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-amber-400 font-mono">~{hoursSaved} giờ</span>
+              <span className="text-xl font-bold text-amber-700 font-mono">~{hoursSaved} giờ</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-ink-500 mt-1">
               Dựa trên ~20 phút tự động hoá cho mỗi phiên truy cập
             </p>
           </div>
         </div>
 
         {/* Card 4: Economic Value Saved */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
+        <div className="card-cream p-5 bg-white flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Giá Trị Kinh Tế</span>
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <span className="text-xs font-semibold text-ink-600">Giá Trị Kinh Tế</span>
+            <div className="p-1.5 rounded-lg bg-mint-50 text-mint-600 border border-mint-200">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-indigo-400 font-mono">
+              <span className="text-xl font-bold text-mint-800 font-mono">
                 ${costSavings.toLocaleString()}
               </span>
-              <span className="text-[10px] text-emerald-400 font-medium">+100% ROI</span>
+              <span className="text-[10px] text-mint-700 font-semibold bg-mint-50 px-1.5 py-0.5 rounded border border-mint-200">+100% ROI</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Giảm thiểu chi phí quản trị rủi ro & kiểm toán thủ công
+            <p className="text-[11px] text-ink-500 mt-1">
+              Giảm thiểu chi phí rủi ro & kiểm toán thủ công
             </p>
           </div>
         </div>
       </div>
 
       {/* Event Distribution Bar */}
-      <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/50 space-y-3">
+      <div className="card-cream p-6 bg-white space-y-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-slate-300 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-indigo-400" />
+          <span className="font-bold text-ink-900 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-mint-600" />
             Phân Bổ Sự Kiện Kiểm Toán (Event Breakdown)
           </span>
-          <span className="text-slate-500 font-mono">Tổng: {logs.length} sự kiện mẫu</span>
+          <span className="text-ink-400 font-mono">Tổng: {logs.length} sự kiện mẫu</span>
         </div>
 
         {/* Multi-segmented Progress Bar */}
-        <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden flex">
-          <div style={{ width: `${launchPct}%` }} className="bg-sky-500 h-full" title={`Gateway: ${launchPct}%`} />
-          <div style={{ width: `${grantPct}%` }} className="bg-emerald-500 h-full" title={`Grants: ${grantPct}%`} />
-          <div style={{ width: `${authPct}%` }} className="bg-amber-500 h-full" title={`Auth: ${authPct}%`} />
-          <div style={{ width: `${systemPct}%` }} className="bg-indigo-500 h-full" title={`System: ${systemPct}%`} />
+        <div className="h-3 w-full bg-cream-200 rounded-full overflow-hidden flex">
+          <div style={{ width: `${launchPct}%` }} className="bg-mint-500 h-full" title={`Gateway: ${launchPct}%`} />
+          <div style={{ width: `${grantPct}%` }} className="bg-mint-700 h-full" title={`Grants: ${grantPct}%`} />
+          <div style={{ width: `${authPct}%` }} className="bg-amber-400 h-full" title={`Auth: ${authPct}%`} />
+          <div style={{ width: `${systemPct}%` }} className="bg-sky-400 h-full" title={`System: ${systemPct}%`} />
         </div>
 
         {/* Legend */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 shrink-0" />
-            <span className="text-slate-400">Gateway Launches:</span>
-            <span className="font-mono text-slate-200 font-medium">{launchCount} ({launchPct}%)</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-mint-500 shrink-0" />
+            <span className="text-ink-600">Gateway Launches:</span>
+            <span className="font-mono text-ink-900 font-semibold">{launchCount} ({launchPct}%)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-            <span className="text-slate-400">Access Grants:</span>
-            <span className="font-mono text-slate-200 font-medium">{grantCount} ({grantPct}%)</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-mint-700 shrink-0" />
+            <span className="text-ink-600">Access Grants:</span>
+            <span className="font-mono text-ink-900 font-semibold">{grantCount} ({grantPct}%)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-            <span className="text-slate-400">Auth & Users:</span>
-            <span className="font-mono text-slate-200 font-medium">{authCount} ({authPct}%)</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
+            <span className="text-ink-600">Auth & Users:</span>
+            <span className="font-mono text-ink-900 font-semibold">{authCount} ({authPct}%)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
-            <span className="text-slate-400">System & Tools:</span>
-            <span className="font-mono text-slate-200 font-medium">{systemCount} ({systemPct}%)</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0" />
+            <span className="text-ink-600">System & Tools:</span>
+            <span className="font-mono text-ink-900 font-semibold">{systemCount} ({systemPct}%)</span>
           </div>
         </div>
       </div>
 
-      {/* Filter Tabs & Table Header */}
+      {/* Filter Tabs & Table Container */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
-            <Filter className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-ink-700">
+            <Filter className="w-3.5 h-3.5 text-mint-600" />
             <span>Lọc Theo Loại Sự Kiện:</span>
           </div>
 
@@ -301,14 +302,14 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
                 <Link
                   key={tab.id}
                   href={`/audit?category=${tab.id}`}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                      ? "bg-mint-600 text-white shadow-mint"
+                      : "bg-white text-ink-600 hover:text-ink-900 hover:bg-cream-100 border border-cream-300"
                   }`}
                 >
                   {tab.label}{" "}
-                  <span className={`text-[10px] ml-1 font-mono ${isActive ? "text-indigo-200" : "text-slate-500"}`}>
+                  <span className={`text-[10px] ml-1 font-mono ${isActive ? "text-mint-100" : "text-ink-400"}`}>
                     ({tab.count})
                   </span>
                 </Link>
@@ -318,10 +319,10 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
         </div>
 
         {/* Audit Logs Table */}
-        <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl bg-slate-900/40">
+        <div className="card-cream overflow-hidden border border-cream-200 bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-mono">
+            <table className="w-full text-left text-xs text-ink-700">
+              <thead className="bg-cream-100/90 text-ink-600 border-b border-cream-200 uppercase tracking-wider font-mono text-[11px]">
                 <tr>
                   <th className="py-3.5 px-4">Thời gian</th>
                   <th className="py-3.5 px-4">Hành động</th>
@@ -330,19 +331,19 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
                   <th className="py-3.5 px-4">Metadata</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-mono">
+              <tbody className="divide-y divide-cream-200/80 font-mono">
                 {filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-500">
-                      <Clock className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+                    <td colSpan={5} className="py-12 text-center text-ink-400 font-sans">
+                      <Clock className="w-8 h-8 mx-auto mb-2 text-ink-300" />
                       Không tìm thấy bản ghi kiểm toán phù hợp trong danh mục này.
                     </td>
                   </tr>
                 ) : (
                   filteredLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-800/40 transition-colors">
+                    <tr key={log.id} className="hover:bg-cream-50/60 transition-colors">
                       {/* Timestamp */}
-                      <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-ink-800 whitespace-nowrap">
                         {log.createdAt
                           ? new Date(log.createdAt).toLocaleString("vi-VN", {
                               year: "numeric",
@@ -357,15 +358,15 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
 
                       {/* Action */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold text-[11px] bg-slate-800 text-slate-200 border border-slate-700">
-                          <Activity className="w-3 h-3 text-indigo-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold text-[11px] bg-mint-50 text-mint-800 border border-mint-200">
+                          <Activity className="w-3 h-3 text-mint-600" />
                           {log.action}
                         </span>
                       </td>
 
                       {/* Actor ID */}
-                      <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap">
-                        <span className="text-slate-300" title={log.actorId}>
+                      <td className="py-3.5 px-4 text-ink-600 whitespace-nowrap">
+                        <span title={log.actorId} className="font-semibold text-ink-800">
                           {log.actorId ? `${log.actorId.slice(0, 8)}...` : "SYSTEM"}
                         </span>
                       </td>
@@ -374,25 +375,25 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {log.checksum ? (
                           <span
-                            className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-900/40"
+                            className="inline-flex items-center gap-1 font-mono text-[11px] text-mint-800 bg-mint-50 px-2 py-0.5 rounded border border-mint-200"
                             title={`Full SHA-256: ${log.checksum}`}
                           >
-                            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                            <ShieldCheck className="w-3 h-3 text-mint-600" />
                             {log.checksum.slice(0, 12)}...
                           </span>
                         ) : (
-                          <span className="text-[11px] text-slate-500 italic">Legacy Record</span>
+                          <span className="text-[11px] text-ink-400 italic font-sans">Bản ghi lịch sử</span>
                         )}
                       </td>
 
                       {/* Metadata JSON */}
                       <td className="py-3.5 px-4">
                         {log.metadata ? (
-                          <code className="text-[11px] text-indigo-300 bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-900/40 block max-w-xs truncate">
+                          <code className="text-[11px] text-ink-700 bg-cream-50 px-2 py-0.5 rounded border border-cream-200 block max-w-xs truncate">
                             {JSON.stringify(log.metadata)}
                           </code>
                         ) : (
-                          <span className="text-slate-600">—</span>
+                          <span className="text-ink-400">—</span>
                         )}
                       </td>
                     </tr>

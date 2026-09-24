@@ -1,41 +1,43 @@
 # Technical Architecture Document
-## Enterprise AI Access Management System
+## Enterprise AI Access Management System — Production Edition
 
 ---
 
-## 1. Nguyên Tắc Kỹ Thuật Tối Thượng
+## 1. Nguyên Tắc Kỹ Thuật Tối Thượng (Core Principles)
 
-1. **Hạ Tầng Thật 100%:** Tuyệt đối không triển khai bất kỳ module giả lập hay bộ nhớ đệm giả lập (in-memory driver). Toàn bộ luồng dữ liệu đi qua Google OAuth 2.0 thật, PostgreSQL thật và Upstash Redis thật.
-2. **Kiến trúc Đơn Luồng Thống Nhất:** Dự án phát triển theo một lộ trình kỹ thuật duy nhất, không duy trì các nhánh kiến trúc song song hay khái niệm phân tách tạm thời.
-3. **Fail-Closed Security:** Mọi route quản trị, thao tác cấp phát và thu hồi tài nguyên đều kiểm tra phân quyền chặt chẽ trên máy chủ (Server-side Route Guard & Server Actions). Mặc định từ chối khi không thỏa mãn vai trò.
-4. **Append-Only Audit Trail:** Mọi sự kiện xác thực và thay đổi trạng thái phân quyền đều ghi nhận bản ghi kiểm toán vĩnh viễn với thông tin tác tử (`actor_id`) và mục tiêu (`target_id`).
+1. **Hạ Tầng Thật 100% (Zero Mock Engine):** Toàn bộ dữ liệu xác thực, phân quyền, khóa bảo mật và kiểm soát tần suất đều vận hành trực tiếp trên Google OAuth 2.0, Neon PostgreSQL (AWS Singapore) và Upstash Redis. Tuyệt đối không mock.
+2. **Kiến Trúc Đơn Luồng Thống Nhất (Single-Track Real Architecture):** Phát triển trực diện trên một ngăn xếp công nghệ đồng nhất, không phân nhánh mô phỏng.
+3. **Phân Tách Rõ Ràng Giữa Debug Nội Bộ & Giao Diện Người Dùng (Clean Production UX):** Mọi thông tin chẩn đoán, câu lệnh SQL, mã lỗi hạ tầng chỉ được ghi nhận an toàn tại server-side logs (`console.error` / `audit_logs`). Giao diện người dùng tuyệt đối tuân thủ trải nghiệm thương mại, lịch sự và hỗ trợ người dùng tối đa.
+4. **Hệ Thống Thiết Kế Mint & Cream Đạt Chuẩn Doanh Nghiệp (Mint & Cream Design Tokens):** Bảng màu kem ấm kết hợp xanh bạc hà ngọt ngào, tối ưu hóa khả năng đọc (readability), độ tương phản WCAG AA và tính thẩm mỹ cao cấp.
 
 ---
 
-## 2. Sơ Đồ Kiến Trúc Hệ Thống (System Topology)
+## 2. Sơ Đồ Kiến Trúc Toàn Diện (System Topology)
 
 ```mermaid
 flowchart TD
-    subgraph Clients["Tầng Trình Duyệt (Client Layer)"]
-        BrowserAdmin["Root Admin (Trình duyệt)<br/>Truy cập /admin & Dashboard"]
-        BrowserEmp["Nhân viên (Trình duyệt)<br/>Truy cập / & Xem Grants"]
+    subgraph Clients["Tầng Trình Duyệt & Giao Diện (Mint & Cream UI Layer)"]
+        BrowserAdmin["Root Admin (/admin)<br/>Executive Governance & Vault Control"]
+        BrowserEmp["Nhân viên (/ & /audit)<br/>AI Workspace, Self-Service & Compliance"]
     end
 
-    subgraph SecurityGate["Tầng Bảo Vệ & Phân Phối (Edge / CDN)"]
-        VercelEdge["Vercel Edge Network (HTTPS)"]
+    subgraph SecurityGate["Tầng Bảo Vệ Mạng & Phân Phối (Edge & Rate Limit)"]
+        VercelEdge["Vercel Global Edge Network (HTTPS)"]
         RateLimiter["Upstash Redis Rate Limiter<br/>Sliding Window 10 req/min/IP"]
     end
 
     subgraph AppServer["Tầng Ứng Dụng (Next.js 14 App Router)"]
-        AuthModule["NextAuth.js v5 (Auth.js)<br/>Google OAuth 2.0 Web Client"]
-        RoleResolver["Role Resolver Middleware<br/>ROOT_ADMIN vs EMPLOYEE"]
-        ServerActions["Server Actions<br/>handleCreateGrant | handleRevokeGrant"]
-        DrizzleORM["Drizzle ORM Engine<br/>Type-safe Query & Mutation"]
+        AuthModule["NextAuth.js v5 (Google OAuth SSO)"]
+        LaunchGateway["Launch Gateway (/api/launch/[grantId])<br/>Safe Redirect & Usage Increment"]
+        ExportEngine["Compliance Export API (/api/audit/export)<br/>RFC 4180 CSV & ISO 27001 JSON"]
+        SessionBroker["Session Broker & Mutex Module<br/>Dynamic Leases & Concurrency Lock"]
+        VaultModule["AES-256-GCM Vault Module<br/>Node.js Crypto Native"]
+        AuditModule["WORM & SHA-256 Audit Module<br/>Deterministic Non-repudiation"]
     end
 
-    subgraph CloudInfra["Tầng Hạ Tầng Lưu Trữ (Managed Cloud Infrastructure)"]
-        Postgres[("PostgreSQL Managed (Neon / Supabase)<br/>Bảng: employees, grants, audit_logs")]
-        RedisStore[("Upstash Redis (Serverless REST)<br/>Kho lưu vết tần suất IP")]
+    subgraph CloudInfra["Tầng Hạ Tầng Lưu Trữ Thật (Managed Cloud Infrastructure)"]
+        Postgres[("Neon Cloud PostgreSQL (AWS Singapore)<br/>WORM Trigger trg_audit_logs_immutable<br/>Tables: employees, departments, grants, vault_credentials, audit_logs")]
+        RedisStore[("Upstash Redis Serverless REST<br/>Concurrency Lease Sets & Rate Limit Keys")]
     end
 
     BrowserAdmin --> VercelEdge
@@ -44,84 +46,67 @@ flowchart TD
     RateLimiter --> RedisStore
     RateLimiter --> AppServer
     AppServer --> AuthModule
-    AuthModule --> RoleResolver
-    RoleResolver --> ServerActions
-    ServerActions --> DrizzleORM
-    DrizzleORM --> Postgres
+    AppServer --> LaunchGateway
+    AppServer --> ExportEngine
+    LaunchGateway --> SessionBroker
+    SessionBroker --> RedisStore
+    LaunchGateway --> AuditModule
+    AppServer --> VaultModule
+    AppServer --> AuditModule
+    AuditModule --> Postgres
+    VaultModule --> Postgres
 ```
 
 ---
 
-## 3. Mô Hình Dữ Liệu Thực Tế (Data Model)
+## 3. Hệ Thống Token Thiết Kế Mint & Cream (Design Tokens Specification)
 
-Mô hình dữ liệu hiện tại chỉ bao gồm 3 bảng đang thực sự tồn tại trong hệ thống di chuyển cơ sở dữ liệu (`scripts/migrate.ts` và `apps/web/src/db/schema.ts`):
+```css
+:root {
+  /* Warm Cream / Ivory Backgrounds */
+  --color-canvas-bg: #FAF7F2;
+  --color-canvas-subtle: #F4EFE6;
+  --color-card-bg: #FFFFFF;
+  --color-card-border: #EFE8DC;
+  --color-card-border-hover: #D8CEBC;
 
-```
-employees (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    google_sub VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL,
-    name VARCHAR(255),
-    avatar_url TEXT,
-    role VARCHAR(50) NOT NULL DEFAULT 'EMPLOYEE',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-)
+  /* Sweet Mint & Emerald Accents */
+  --color-mint-50: #ECFDF5;
+  --color-mint-100: #D1FAE5;
+  --color-mint-200: #A7F3D0;
+  --color-mint-400: #34D399;
+  --color-mint-500: #10B981;
+  --color-mint-600: #059669;
+  --color-mint-700: #047857;
+  --color-mint-900: #064E3B;
 
-grants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    resource_name VARCHAR(255) NOT NULL,
-    granted_by VARCHAR(255) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE
-)
-INDEXES: idx_grants_employee_id, idx_grants_status
+  /* Typography / Contrasts */
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-text-cream: #928B80;
 
-audit_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    actor_id VARCHAR(255),
-    action VARCHAR(100) NOT NULL,
-    target_id VARCHAR(255),
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-)
+  /* Functional Accents */
+  --color-amber-soft: #FFFBEB;
+  --color-amber-border: #FDE68A;
+  --color-amber-text: #B45309;
+}
 ```
 
-> **Ghi chú kiến trúc:** Không thiết kế trước các bảng chưa có hạ tầng thật (như `ai_accounts`, `secret_stores`). Các bảng mới chỉ được thêm vào khi có yêu cầu tích hợp thực tế.
+---
+
+## 4. Mô Hình Dữ Liệu Thực Tế (5 Bảng Hoàn Chỉnh)
+
+1. **`employees`**: Danh tính nhân viên qua Google OAuth (`google_sub`, `email`, `name`, `avatar_url`, `role`, `department_id`).
+2. **`departments`**: Cơ cấu tổ chức & định mức ngân sách (`name`, `code`, `monthly_budget_usd`).
+3. **`grants`**: Quyền truy cập AI (`employee_id`, `resource_name`, `granted_by`, `status`, `access_count`, `last_accessed_at`, `expires_at`).
+4. **`vault_credentials`**: Bản quyền dùng chung mã hóa AES-256-GCM (`resource_name`, `account_email`, `encrypted_secret`, `iv`, `auth_tag`, `max_concurrency`, `status`, `last_rotated_at`).
+5. **`audit_logs`**: Nhật ký bất biến WORM (`actor_id`, `action`, `target_id`, `metadata`, `checksum`, `created_at`). Được bảo vệ bởi Database Trigger `trg_audit_logs_immutable` chặn 100% `UPDATE`/`DELETE`.
 
 ---
 
-## 4. Công Nghệ & Lý Do Lựa Chọn (Tech Stack)
+## 5. Tiêu Chuẩn Trải Nghiệm Người Dùng (Production UX Standards)
 
-| Tầng | Công nghệ | Lý do lựa chọn |
-|---|---|---|
-| **Xác thực (Authentication)** | NextAuth.js (Auth.js v5) + Google Provider | Chuẩn bảo mật công nghiệp, cơ chế JWT ký bảo vệ toàn vẹn bằng khóa bí mật, không lưu mật khẩu thô. |
-| **Ứng dụng Fullstack** | Next.js 14+ App Router & Server Actions | Xử lý logic máy chủ an toàn, loại bỏ nhu cầu duy trì backend rời rạc trong phạm vi hiện tại. |
-| **Cơ sở dữ liệu (Database)** | PostgreSQL (Neon / Supabase managed) | Hạ tầng đám mây chuẩn có chuỗi kết nối thật, hỗ trợ tính năng connection pooling serverless. |
-| **Truy vấn Dữ liệu (ORM)** | Drizzle ORM | Gọn nhẹ, hỗ trợ type-safe tuyệt đối với TypeScript, định nghĩa schema đồng nhất với migration DDL. |
-| **Bảo vệ Tần suất (Rate Limiter)** | Upstash Redis (@upstash/ratelimit) | Kết nối phi trạng thái qua REST API, tối ưu hoàn toàn cho môi trường máy chủ serverless. |
-| **Lưu trữ & Triển khai (Hosting)** | Vercel Platform | Tích hợp sâu với Next.js, tự động build từ GitHub, cấp phát tên miền công khai kèm chứng chỉ HTTPS. |
-
----
-
-## 5. Ngoài Phạm Vi Kỹ Thuật (Chủ Động Hoãn)
-
-Các thành phần kỹ thuật sau đây được **chủ động hoãn** cho đến khi xuất hiện nhu cầu thực tế:
-
-- **HashiCorp Vault / SecretStore chuyên dụng:** Hiện tại thông tin cấu hình và khóa bí mật được quản lý an toàn qua Vercel Environment Variables. Vault chỉ được đưa vào khi cần quản lý và xoay vòng credential của bên thứ ba thực tế.
-- **Tích hợp API SCIM / Workspace Admin SDK:** Chỉ triển khai khi sở hữu tài khoản doanh nghiệp chính thức từ OpenAI hoặc Google để kiểm thử luồng cấp phát seat tự động.
-- **Khóa phân tán Redis Lease Mutex:** Không áp dụng vì hệ thống chưa quản lý các tài khoản AI dùng chung cần giới hạn số phiên truy cập đồng thời.
-- **Browser Extension & WebSocket Push:** Không triển khai tiện ích trình duyệt hay WebSocket push khi trải nghiệm trên nền web đang phục vụ đầy đủ nhu cầu quản trị và phân quyền.
-
----
-
-## 6. Định Nghĩa Hoàn Thành Kỹ Thuật (Technical DoD)
-
-Hệ thống được xác nhận hoàn thành kỹ thuật khi vượt qua toàn bộ tiêu chí kiểm chứng sau:
-
-- [ ] Lệnh `npx turbo build` thực thi thành công với mã thoát 0 (zero error, zero warning).
-- [ ] Không tồn tại bất kỳ đoạn mã hoặc tệp tin nào chứa thành phần giả lập (`grep -rn "Mock" apps/` trả về rỗng).
-- [ ] Script migration `npm run db:migrate` áp dụng DDL thành công lên database PostgreSQL đám mây thật.
-- [ ] Có URL công khai trên Vercel có thể truy cập từ mạng ngoài.
-- [ ] Dữ liệu người dùng, quyền hạn và lịch sử kiểm toán hiển thị chính xác trên dashboard quản trị của Neon / Supabase.
+* **Không bao giờ hiển thị lỗi chết (Graceful Fallback):** Khi tài khoản mới đăng nhập chưa có quyền, giao diện hiển thị Catalog chuyên nghiệp kèm nút "Yêu cầu cấp quyền" tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs`.
+* **Thông báo phản hồi tức thì (Instant Feedback Toast & Modal):** Thao tác sao chép, cấp quyền, thu hồi, trả slot đều có chỉ báo loading và phản hồi rõ ràng.
+* **Tối ưu hóa khả năng hiển thị:** Responsive trên mọi kích thước màn hình máy tính để bàn, tablet và thiết bị di động.
