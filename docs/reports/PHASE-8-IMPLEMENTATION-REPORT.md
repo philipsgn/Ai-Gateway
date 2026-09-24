@@ -33,6 +33,11 @@ Thay vì để danh mục tĩnh mang tính giả định, hệ thống đã chu�
 3. **Đang bận (`ĐANG BẬN`):** Đã đạt tối đa `Y / Y` ghế đồng thời.
    - Hiển thị nút `Đang bận • Thử lại sau` nhằm tránh xung đột phiên làm việc.
 
+### 1.3 Nâng Cấp Quyền Hạn Root Admin & Minh Bạch Hóa Trạng Thái Công Cụ (Cột mốc M8.4)
+- **Cơ chế 1-click Self-Grant cho Root Admin:** Loại bỏ nghịch lý khi tài khoản Quản trị viên tối cao phải "gửi đơn xin duyệt" chính mình. Nút trên Catalog chuyển thành `"⚡ Kích Hoạt Cho Tôi"`, tự động thêm bản ghi vào bảng `grants` và ghi audit log `GRANT_ISSUED` với quyền hạn quản trị.
+- **Minh bạch hóa Trạng thái Không gian làm việc:** Đổi tiêu đề từ *"Công Cụ Sẵn Sàng Làm Việc"* thành *"Công Cụ Được Cấp Quyền Của Bạn"*, phân định rành mạch giữa các công cụ đã kết nối bản quyền (`SẴN SÀNG`) và công cụ đang chờ nạp tài khoản vào Vault (`CHỜ KẾT NỐI`), loại bỏ hoàn toàn sự nhầm lẫn của người dùng.
+- **Xác thực dữ liệu thật 100%:** Xác nhận dữ liệu trong bảng `vault_credentials` (như `ChatGPT Team` - `shared-ai-team@enterprise.internal`) là dữ liệu thật lưu trong Neon PostgreSQL từ Phase 4, hoàn toàn không phải hardcode trong mã nguồn frontend.
+
 ---
 
 ## 2. Bằng Chứng Kiểm Chứng Kỹ Thuật (Verifiable Proof of Done)

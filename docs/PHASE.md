@@ -18,32 +18,36 @@ Sau phiên thẩm vấn chuyên sâu (/grill-me) cùng người dùng, hệ th�
 
 ## 2. Tiêu Chí Nghiệm Thu (Definition of Done)
 
-- [ ] **Đồng Bộ Tài Liệu 100%:** 4 file tài liệu chuẩn (`PRD.md`, `TECH_ARCHITECTURE.md`, `PLAN.md`, `PHASE.md`) phản ánh chính xác mô hình Shared License Pool và vòng đời Vault.
-- [ ] **Cập Nhật Cẩm Nang Trực Quan (`/he-thong`):** Trang web hiển thị sơ đồ và hướng dẫn rõ ràng: Tại sao mua 5 ghế dùng cho 50 người, Admin nạp vào Vault thế nào và Gateway điều phối ra sao.
-- [ ] **Nâng Cấp Giao Diện Trang Chủ (`/`):**
+- [x] **Đồng Bộ Tài Liệu 100%:** 4 file tài liệu chuẩn (`PRD.md`, `TECH_ARCHITECTURE.md`, `PLAN.md`, `PHASE.md`) phản ánh chính xác mô hình Shared License Pool và vòng đời Vault.
+- [x] **Cập Nhật Cẩm Nang Trực Quan (`/he-thong`):** Trang web hiển thị sơ đồ và hướng dẫn rõ ràng: Tại sao mua 5 ghế dùng cho 50 người, Admin nạp vào Vault thế nào và Gateway điều phối ra sao.
+- [x] **Nâng Cấp Giao Diện Trang Chủ (`/`):**
   - Thẻ công cụ có tài khoản Vault: Hiển thị số ghế thời gian thực, nút *"Mở công cụ ngay"*.
-  - Thẻ công cụ chưa có tài khoản Vault: Hiển thị nhãn *"Chưa kích hoạt"* và hướng dẫn Admin kết nối tại `/admin`.
-- [ ] **Giữ Vững 100% Zero Mock:** Không dùng class giả lập, kiểm tra `git grep -i "Mock"` = 0.
-- [ ] **Kiểm Tra Build Thành Công:** `npx turbo build` hoàn tất với mã thoát 0.
+  - Thẻ công cụ chưa có tài khoản Vault: Hiển thị nhãn *"Chờ kết nối"* và hướng dẫn Admin kết nối tại `/admin`.
+  - Phân định rành mạch tiêu đề: *"Công Cụ Được Cấp Quyền Của Bạn"* thay vì gây hiểu lầm.
+- [x] **Cơ Chế 1-Click Self-Grant Cho Root Admin:** Root Admin có thể tự kích hoạt quyền công cụ ngay trên Catalog mà không cần gửi đơn xin duyệt.
+- [x] **Giữ Vững 100% Zero Mock:** Không dùng class giả lập, kiểm tra `git grep -i "Mock"` = 0.
+- [x] **Kiểm Tra Build Thành Công:** `npx turbo build` hoàn tất với mã thoát 0.
 
 ---
 
 ## 3. Kế Hoạch Phân Rã Nhiệm Vụ (Task Breakdown)
 
 ### Nhóm 1: Nâng Cấp Logic Trang Chủ & Trạng Thái Kích Hoạt Vault
-- [ ] Cập nhật `apps/web/src/app/page.tsx`:
+- [x] Cập nhật `apps/web/src/app/page.tsx`:
   - Truy vấn thông tin `vaultCredentials` để xác định trạng thái kích hoạt thực tế của từng dịch vụ.
   - Render trạng thái công cụ:
     - Nếu đã có Vault: `SẴN SÀNG` + Tình trạng ghế (`X/Y người đang dùng`).
-    - Nếu chưa có Vault: `Chờ Admin kết nối` + Vô hiệu hóa nút mở ứng dụng, gợi ý Admin vào `/admin` nạp tài khoản.
+    - Nếu chưa có Vault: `CHỜ KẾT NỐI` + Vô hiệu hóa nút mở ứng dụng, gợi ý Admin vào `/admin` nạp tài khoản.
+  - Tích hợp Server Action `handleRequestAccess` tự động nhận diện `ROOT_ADMIN` để cấp quyền tức thì (1-click Self-Grant) và ghi log kiểm toán.
+  - Đổi tiêu đề mục làm việc thành *"Công Cụ Được Cấp Quyền Của Bạn"*.
 
 ### Nhóm 2: Nâng Cấp Cẩm Nang Hệ Thống Nền Tảng (`/he-thong`)
-- [ ] Cập nhật `apps/web/src/app/he-thong/page.tsx`:
+- [x] Cập nhật `apps/web/src/app/he-thong/page.tsx`:
   - Thêm phần minh họa trực quan: **"Mô Hình Bản Quyền Dùng Chung (Shared License Pool) & Cách Admin Kích Hoạt"**.
   - Giải thích rõ: Mua gói Team/Business theo ghế thế nào, Admin nạp vào Vault ra sao, và tại sao tiết kiệm chi phí mà không lo bị khóa tài khoản.
 
 ### Nhóm 3: Kiểm Chứng Kỹ Thuật & Nghiệm Thu
-- [ ] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`.
-- [ ] Kiểm tra TypeScript compilation: `npx tsc --project apps/web/tsconfig.json --noEmit`.
-- [ ] Chạy `npx turbo build` đảm bảo mã thoát 0.
-- [ ] Lập báo cáo nghiệm thu `docs/reports/PHASE-8-IMPLEMENTATION-REPORT.md`.
+- [x] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`.
+- [x] Kiểm tra TypeScript compilation: `npx tsc --project apps/web/tsconfig.json --noEmit`.
+- [x] Chạy `npx turbo build` đảm bảo mã thoát 0.
+- [x] Lập và cập nhật báo cáo nghiệm thu `docs/reports/PHASE-8-IMPLEMENTATION-REPORT.md`.
