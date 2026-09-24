@@ -13,6 +13,7 @@ Enterprise AI Access Management System — personal project portfolio. Đã tr�
 3. **Không đặc tả trước cho phase chưa bắt đầu.** Chỉ phase đang active trong `PHASE.md` mới có task breakdown chi tiết. Nếu được yêu cầu viết trước cho phase tương lai, chỉ viết tên + điều kiện mở, từ chối viết task chi tiết.
 4. **Definition of Done phải kiểm chứng được**, không chấp nhận tự ghi "PASS" mà không kèm bằng chứng (link deploy, output lệnh, ảnh chụp dashboard).
 5. **Không tạo file tài liệu mới** ngoài 4 file đã có (`PRD.md`, `TECH_ARCHITECTURE.md`, `PLAN.md`, `PHASE.md`) trừ khi người dùng yêu cầu rõ ràng.
+6. **Tuân thủ chu trình: Đọc Docs -> Lên Tasks -> Thực thi -> Cập nhật Docs (Không trùng lặp).** Mỗi khi nhận prompt từ người dùng, Agent bắt buộc phải đọc lại các file tài liệu để nắm đúng bối cảnh, lên danh sách task cụ thể và thực thi, sau đó cập nhật tài liệu tương ứng mà TUYỆT ĐỐI KHÔNG cập nhật lại các nội dung/cột mốc đã tồn tại gây lặp lại.
 
 ## Vai trò 4 file tài liệu — đọc theo thứ tự này khi bắt đầu phiên mới
 
@@ -22,6 +23,22 @@ Enterprise AI Access Management System — personal project portfolio. Đã tr�
 4. `PRD.md` — chỉ đọc khi cần hiểu lại mục tiêu sản phẩm tổng thể, hiếm khi cần cho task code hàng ngày.
 
 Nếu `DECISIONS.md` tồn tại, đọc trước khi đề xuất bất kỳ thay đổi tech stack nào — tránh đề xuất lại quyết định đã chốt.
+
+## Chu trình thực thi bắt buộc cho MỌI prompt (Mandatory Prompt Execution Lifecycle)
+
+Mỗi khi nhận một yêu cầu (prompt) mới từ người dùng, Agent phải tuân thủ nghiêm ngặt 4 bước theo đúng thứ tự sau:
+
+1. **Đọc tài liệu trước (Mandatory Pre-read):**
+   - Đọc các tài liệu dự án liên quan (`PLAN.md`, `PHASE.md`, `TECH_ARCHITECTURE.md`, `PRD.md`) trước khi thực hiện bất kỳ hành động nào.
+   - Nắm rõ trạng thái hiện tại, các quyết định kiến trúc đã chốt, và phạm vi công việc để không lạc hướng.
+2. **Lên kế hoạch task (Task Breakdown) & Thực thi (Execution):**
+   - Lập danh sách các task cụ thể, rõ ràng, bám sát yêu cầu người dùng.
+   - Tiến hành code, kiểm thử hoặc xử lý trên hạ tầng thật (Real Infrastructure, 100% Zero Mock).
+3. **Cập nhật tài liệu (Documentation Sync):**
+   - Sau khi hoàn thành việc triển khai hoặc thay đổi logic/tính năng quan trọng, đồng bộ ngay lập tức vào các file docs (`PLAN.md`, `PHASE.md`, `TECH_ARCHITECTURE.md` hoặc báo cáo phase tương ứng).
+4. **Nguyên tắc Không Trùng Lặp (No Duplicate Updates / DRY Docs):**
+   - TUYỆT ĐỐI KHÔNG cập nhật lại hoặc viết lặp lại các nội dung, task, giải thích, hay cột mốc đã có sẵn trong tài liệu.
+   - Chỉ bổ sung những thông tin mới, thay đổi mới phát sinh hoặc cập nhật tiến độ thực tế để giữ tài liệu luôn tinh gọn, sắc bén và chuẩn xác.
 
 ## Quy trình khi hoàn thành 1 phase
 
