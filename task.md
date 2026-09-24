@@ -43,7 +43,7 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 6, bám sát 100% phâ
   - [x] Nút xuất CSV (RFC 4180) và ISO 27001 / SOC 2 JSON
 
 ## Nhóm 6: Kiểm Chứng Toàn Diện & Nghiệm Thu
-- [ ] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`
-- [ ] Kiểm tra TypeScript compilation: `npx tsc --noEmit`
-- [ ] Chạy `npx turbo build` đảm bảo mã thoát 0
-- [ ] Lập báo cáo nghiệm thu `docs/reports/PHASE-6-IMPLEMENTATION-REPORT.md`
+- [x] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`
+- [x] Kiểm tra TypeScript compilation: `npx tsc --noEmit`
+- [x] Chạy `npx turbo build` đảm bảo mã thoát 0
+- [x] Lập báo cáo nghiệm thu `docs/reports/PHASE-6-IMPLEMENTATION-REPORT.md`
