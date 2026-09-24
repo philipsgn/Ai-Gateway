@@ -78,6 +78,80 @@ export default function HeThongPage() {
       </div>
 
       {/* --------------------------------------------------------------------- */}
+      {/* 2.1. CƠ CHẾ BẢN QUYỀN DOANH NGHIỆP & CÁCH ADMIN KÍCH HOẠT VAULT       */}
+      {/* --------------------------------------------------------------------- */}
+      <div className="card-cream p-8 space-y-6 bg-gradient-to-br from-white via-cream-50 to-mint-50/20">
+        <div className="flex items-center gap-3 border-b border-cream-300 pb-4">
+          <div className="w-9 h-9 rounded-xl bg-mint-500 text-white flex items-center justify-center font-bold text-sm shadow-mint">
+            <Lock className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-ink-900">
+              Cơ Chế Bản Quyền Dùng Chung (Shared License Pool)
+            </h2>
+            <p className="text-xs text-ink-500">
+              Cách doanh nghiệp mua gói bản quyền, nạp vào Vault và phân phối ghế cho toàn thể nhân sự
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 text-xs sm:text-sm text-ink-700 leading-relaxed">
+          <p>
+            Các nhà cung cấp AI hàng đầu thế giới (OpenAI ChatGPT Team, Anthropic Claude for Work, Google Workspace Gemini, Cursor Business) đều bán bản quyền theo mô hình <strong>tính phí trên từng người dùng (Per-Seat Licensing)</strong> từ $20 – $40/người/tháng.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="p-4 rounded-xl bg-white border border-rose-200 space-y-2">
+              <h4 className="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
+                <span>❌ Nếu mua lẻ 1:1 cho từng người:</span>
+              </h4>
+              <p className="text-xs text-ink-600 leading-relaxed">
+                Công ty 50 nhân viên cần mua 50 license riêng lẻ, chi phí lên tới <strong>$1,500 – $2,000/tháng (gần 50 triệu VNĐ)</strong>. Tuy nhiên, phần lớn nhân viên chỉ dùng vài giờ mỗi tuần, dẫn tới lãng phí ngân sách khổng lồ.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white border border-mint-200 space-y-2">
+              <h4 className="font-bold text-mint-800 flex items-center gap-1.5 text-xs">
+                <span>✅ Giải pháp Cổng Dùng Chung (AI Gateway):</span>
+              </h4>
+              <p className="text-xs text-ink-600 leading-relaxed">
+                Công ty chỉ cần mua một nhóm nhỏ giấy phép (ví dụ: <strong>mua 5 ghế ChatGPT Team</strong>). Admin nạp tài khoản doanh nghiệp vào <strong>Kho Mật Mã (Vault)</strong> trên Cổng Quản Trị và đặt giới hạn 5 ghế đồng thời. Cả 50 nhân viên đều được dùng chung 5 ghế này một cách trơn tru!
+              </p>
+            </div>
+          </div>
+
+          {/* Vòng đời kích hoạt công cụ */}
+          <div className="pt-4 border-t border-cream-200 space-y-3">
+            <h4 className="font-bold text-ink-900 text-xs sm:text-sm">
+              Trạng thái của các công cụ trên màn hình làm việc:
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+                <span className="font-bold text-amber-900 block">1. Chờ Kết Nối</span>
+                <p className="text-amber-800 text-[11px] leading-relaxed">
+                  Công cụ có trong danh mục mẫu nhưng Admin chưa nạp tài khoản bản quyền vào Vault. Nút mở ứng dụng tạm khóa an toàn.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-mint-50 border border-mint-200 space-y-1">
+                <span className="font-bold text-mint-900 block">2. Sẵn Sàng (X/Y ghế)</span>
+                <p className="text-mint-800 text-[11px] leading-relaxed">
+                  Admin đã nạp tài khoản bản quyền và còn ghế trống. Nhân viên được cấp quyền có thể bấm mở làm việc ngay.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-cream-200 border border-cream-300 space-y-1">
+                <span className="font-bold text-ink-900 block">3. Đang Bận (Y/Y ghế)</span>
+                <p className="text-ink-700 text-[11px] leading-relaxed">
+                  Toàn bộ ghế đồng thời đang có người sử dụng. Hệ thống tạm dừng phiên mới để tránh bị nhà cung cấp khóa tài khoản.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --------------------------------------------------------------------- */}
       {/* 3. Quy Trình 3 Bước Dành Cho Nhân Viên                                */}
       {/* --------------------------------------------------------------------- */}
       <div className="card-cream p-8 space-y-6">

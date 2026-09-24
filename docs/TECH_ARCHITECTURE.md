@@ -59,37 +59,29 @@ flowchart TD
 
 ---
 
-## 3. Hệ Thống Token Thiết Kế Mint & Cream (Design Tokens Specification)
+## 3. Hệ Thống Token Thiết Kế Trầm Dịu (Calm Muted Design Tokens)
 
 ```css
 :root {
-  /* Warm Cream / Ivory Backgrounds */
-  --color-canvas-bg: #FAF7F2;
-  --color-canvas-subtle: #F4EFE6;
+  /* Calming Warm Stone Canvas */
+  --color-canvas-bg: #F6F5F0;
+  --color-canvas-subtle: #EFECE6;
   --color-card-bg: #FFFFFF;
-  --color-card-border: #EFE8DC;
-  --color-card-border-hover: #D8CEBC;
+  --color-card-border: #E5E1D8;
+  --color-card-border-hover: #C4DBD0;
 
-  /* Sweet Mint & Emerald Accents */
-  --color-mint-50: #ECFDF5;
-  --color-mint-100: #D1FAE5;
-  --color-mint-200: #A7F3D0;
-  --color-mint-400: #34D399;
-  --color-mint-500: #10B981;
-  --color-mint-600: #059669;
-  --color-mint-700: #047857;
-  --color-mint-900: #064E3B;
+  /* Calming Muted Sage Accents */
+  --color-sage-50: #F0F5F2;
+  --color-sage-100: #E2ECE5;
+  --color-sage-200: #C4DBD0;
+  --color-sage-500: #3E7B5C; /* Calming forest emerald */
+  --color-sage-600: #32654B;
+  --color-sage-900: #162E22;
 
   /* Typography / Contrasts */
-  --color-text-primary: #1F2937;
+  --color-text-primary: #24292F;
   --color-text-secondary: #4B5563;
   --color-text-muted: #6B7280;
-  --color-text-cream: #928B80;
-
-  /* Functional Accents */
-  --color-amber-soft: #FFFBEB;
-  --color-amber-border: #FDE68A;
-  --color-amber-text: #B45309;
 }
 ```
 
@@ -105,8 +97,32 @@ flowchart TD
 
 ---
 
-## 5. Tiêu Chuẩn Trải Nghiệm Người Dùng (Production UX Standards)
+## 5. Kiến Trúc Ghế Dùng Chung & Vòng Đời Kích Hoạt Vault (Shared License Pool & Activation)
 
+### 5.1 Nguyên lý điều phối ghế dùng chung (Session Pooling Engine)
+- Doanh nghiệp mua một lượng bản quyền giới hạn (ví dụ: gói ChatGPT Team 5 ghế).
+- Admin nạp thông tin tài khoản doanh nghiệp vào bảng `vault_credentials` với `max_concurrency = 5`.
+- Cơ chế `acquireSessionLease` trên Upstash Redis sử dụng Redis Sets để theo dõi danh sách `userId` đang giữ phiên trong cửa sổ 30 phút (TTL: 1800 giây).
+- Khi số lượng người dùng đồng thời chạm ngưỡng `max_concurrency`, yêu cầu khởi chạy mới sẽ bị chặn an toàn với mã `concurrency_limit_exceeded`, tránh để nhà cung cấp khóa tài khoản doanh nghiệp do vi phạm chính sách đăng nhập bất thường.
+
+### 5.2 Vòng đời kích hoạt công cụ (Tool Activation Lifecycle)
+```mermaid
+stateDiagram-v2
+    [*] --> UNCONFIGURED: Công cụ có trong Catalog mẫu
+    UNCONFIGURED --> ACTIVE_READY: Admin nạp tài khoản vào Vault (/admin)
+    ACTIVE_READY --> SEAT_BUSY: Đạt tối đa maxConcurrency người dùng
+    SEAT_BUSY --> ACTIVE_READY: Nhân viên trả ghế hoặc hết TTL 30 phút
+    ACTIVE_READY --> UNCONFIGURED: Admin tạm dừng hoặc xóa tài khoản khỏi Vault
+```
+- **Chưa cấu hình (`UNCONFIGURED`):** Chưa có bản ghi `vault_credentials` tương ứng. Giao diện hiển thị nhãn *"Chưa kích hoạt / Chờ Admin kết nối"*.
+- **Sẵn sàng (`ACTIVE_READY`):** Có tài khoản Vault đang hoạt động và còn ghế trống. Hiển thị *"Sẵn sàng (X/Y người đang dùng)"*, cho phép bấm *"Mở công cụ ngay"*.
+- **Đang bận (`SEAT_BUSY`):** Toàn bộ ghế đang có người giữ. Hiển thị nút *"Đang bận • Thử lại sau"*.
+
+---
+
+## 6. Tiêu Chuẩn Trải Nghiệm Người Dùng (Production UX Standards)
+
+* **Phân tách từ ngữ chuyên ngành:** Mọi cơ chế phức tạp (SHA-256, WORM, Lease Mutex, AES-256) được quy tụ vào trang **"Hệ Thống" (`/he-thong`)** để người dùng và nhân sự mới dễ dàng tra cứu.
+* **Giao diện làm việc tinh giản:** Trang chủ tập trung vào trải nghiệm công việc thực tế của nhân viên: Mở công cụ, kiểm tra ghế trống, trả ghế và xin cấp quyền.
 * **Không bao giờ hiển thị lỗi chết (Graceful Fallback):** Khi tài khoản mới đăng nhập chưa có quyền, giao diện hiển thị Catalog chuyên nghiệp kèm nút "Yêu cầu cấp quyền" tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs`.
-* **Thông báo phản hồi tức thì (Instant Feedback Toast & Modal):** Thao tác sao chép, cấp quyền, thu hồi, trả slot đều có chỉ báo loading và phản hồi rõ ràng.
 * **Tối ưu hóa khả năng hiển thị:** Responsive trên mọi kích thước màn hình máy tính để bàn, tablet và thiết bị di động.

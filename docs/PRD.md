@@ -61,33 +61,31 @@ Sản phẩm được định hình lại toàn diện về mặt thẩm mỹ th
 
 ---
 
-## 4. Phạm Vi Nâng Cấp Thành Bản Production (Phase 6 Scope)
+## 4. Mô Hình Quản Trị Bản Quyền Thực Tế (Production Shared License Pool Model)
 
-1. **Mint & Cream Design System & Typography:**
-   - Thay thế theme tối bằng hệ màu Kem ấm kết hợp Xanh ngọt ngào (Pastel Mint & Warm Cream).
-   - Thiết lập các component chuẩn doanh nghiệp: Navigation Bar, Profile Dropdown, Stat Cards, Tool Cards, Badges, Modals.
-2. **Trải Nghiệm Nhân Viên Hoàn Chỉnh (Employee Experience):**
-   - Khu vực "AI Workspace" với các công cụ đã được cấp phép.
-   - Khu vực "AI Catalog & Self-Service" cho phép gửi yêu cầu cấp quyền ngay khi tài khoản mới tạo.
-   - Đồng bộ trạng thái session tự động nếu người dùng có session hợp lệ nhưng dữ liệu chưa liên kết.
-3. **Cổng Quản Trị Doanh Nghiệp Tinh Hoa (Admin Portal Experience):**
-   - Thiết kế lại 4 trụ cột: Ngân sách phòng ban, Kho mật mã Vault, Ma trận phân quyền, Báo cáo kiểm toán theo phong cách Mint & Cream.
-   - Bộ lọc, tìm kiếm nhân viên và quản lý linh hoạt.
-4. **Trung Tâm Tuân Thủ & Phân Tích ROI (Compliance & ROI Center):**
-   - Bảng chứng nhận WORM Immutability chuẩn ISO 27001.
-   - Chỉ số toàn vẹn SHA-256 100% với giao diện thẩm mỹ cao.
-   - Bộ xuất file báo cáo tiện lợi.
-5. **Kiểm Thử & Đóng Gói Production:**
-   - Đảm bảo 100% không mock class (`git grep -i "Mock"` = 0).
-   - `npx turbo build` thành công mã thoát 0.
-   - Deploy mượt mà trên Vercel với trải nghiệm hoàn thiện.
+### 4.1 Bản chất chi phí bản quyền AI doanh nghiệp
+- Các nhà cung cấp AI lớn (OpenAI ChatGPT Team, Anthropic Claude for Work, Google Workspace Gemini, Cursor Business) tính phí theo mô hình **Per-Seat Licensing** ($20 – $40/user/tháng).
+- Nếu doanh nghiệp 100 nhân sự mua 100 tài khoản riêng lẻ, tổng chi phí lên tới $3,000 – $4,000/tháng, trong khi tần suất sử dụng thực tế của phần lớn nhân viên là không liên tục (vài giờ/tuần).
+
+### 4.2 Cơ chế Cổng Dùng Chung Thông Minh (Shared License Pool)
+- Doanh nghiệp chỉ cần mua một số lượng giấy phép vừa đủ (ví dụ: mua 5 ghế ChatGPT Team, 3 ghế Claude Pro).
+- Quản trị viên (Admin) nhập thông tin tài khoản doanh nghiệp đó vào **Kho Mật Mã Dùng Chung (`vault_credentials`)** trên Cổng Quản Trị, cấu hình số ghế tối đa `maxConcurrency = 5`.
+- Cổng Gateway tự động điều phối phiên làm việc cho toàn bộ 100 nhân viên thông qua cơ chế Lease Mutex trên Upstash Redis:
+  - Khi nhân viên bấm "Mở công cụ ngay", hệ thống cấp 1 chỗ ngồi (thời hạn 30 phút).
+  - Khi hoàn thành công việc, nhân viên bấm "Trả lại chỗ" để nhường ghế cho đồng nghiệp.
+  - Nếu ghế đã đầy (5/5 người đang dùng), hệ thống tạm thời báo bận để tránh bị nhà cung cấp khóa tài khoản vì đăng nhập bất thường.
+
+### 4.3 Vòng đời kích hoạt công cụ (Vault Activation Lifecycle)
+1. **Chờ kết nối bản quyền (`UNCONFIGURED / PENDING_VAULT`):** Công cụ có trong danh mục mẫu của công ty, nhưng Admin chưa nạp tài khoản doanh nghiệp vào Vault. Giao diện hiển thị nhãn *"Chưa kích hoạt / Chờ Admin kết nối"*, ngăn ngừa nhân viên truy cập nhầm vào liên kết trống.
+2. **Đã kích hoạt & Sẵn sàng (`ACTIVE & READY`):** Admin đã nạp tài khoản vào Vault. Nhân viên được cấp quyền thấy trạng thái *"Sẵn sàng (X/Y người đang dùng)"* và có thể mở làm việc ngay.
+3. **Đầy ghế (`SEAT_FULL / BUSY`):** Toàn bộ số ghế đồng thời đã có người giữ. Hiển thị nhãn *"Đang bận (X/X người)"* và nhắc nhân viên thử lại sau ít phút.
 
 ---
 
 ## 5. Tiêu Chí Nghiệm Thu (Definition of Done)
 
-1. Giao diện trực quan mang đúng tông màu **Kem ấm (#FAF7F2)** và **Xanh ngọt ngào (#10B981, #ECFDF5)**.
-2. 100% nội dung debug/sandbox bị loại bỏ khỏi giao diện người dùng.
-3. Người dùng mới chưa có quyền được chào đón bằng Catalog công cụ đẹp mắt và nút "Yêu cầu cấp quyền" tiện ích.
+1. Giao diện trực quan mang đúng tông màu **Trầm dịu nhẹ, thanh lịch (Muted Warm Stone & Calming Sage)**.
+2. 100% nội dung debug/sandbox bị loại bỏ khỏi giao diện người dùng; các từ ngữ chuyên ngành rườm rà được chuyển vào trang **"Hệ Thống" (`/he-thong`)**.
+3. Trang chủ phân biệt rõ ràng giữa công cụ **Đã kích hoạt Vault** (cho phép mở làm việc, hiển thị ghế) và công cụ **Chưa kết nối bản quyền** (hiển thị nhãn chờ Admin).
 4. Mọi tính năng cốt lõi (OAuth, Launch Gateway, Upstash Redis Mutex, Vault AES-256-GCM, WORM Trigger) tiếp tục hoạt động chính xác 100% trên hạ tầng thật.
 5. Kiểm tra build `npx turbo build` đạt mã 0, không có bất kỳ cảnh báo type hay lint nghiêm trọng nào.

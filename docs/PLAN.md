@@ -28,6 +28,7 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 | **5** | **Enterprise Compliance & WORM Audit Analytics**<br/>*Báo cáo tuân thủ cấp doanh nghiệp: Xuất báo cáo kiểm toán phục vụ chứng chỉ ISO 27001 / SOC 2, biểu đồ trực quan hóa tần suất và hiệu quả sử dụng AI toàn công ty.* | ✅ **Hoàn thành** | Đã nghiệm thu trigger WORM chặn sửa/xóa trên PostgreSQL, băm mật mã học SHA-256, API xuất báo cáo CSV/JSON và giao diện ROI tại /audit. |
 | **6** | **Enterprise Production Transformation & Mint-Cream UI/UX Overhaul**<br/>*Chuyển đổi toàn diện sản phẩm thành bản Production thương mại: Áp dụng hệ thiết kế Mint & Cream cao cấp, loại bỏ hoàn toàn các khung debug/sandbox, hoàn thiện trải nghiệm yêu cầu cấp quyền và tối ưu luồng người dùng.* | ✅ **Hoàn thành** | Đã nghiệm thu hệ thiết kế Mint & Cream, xóa bỏ debug panel, build thành công và xuất báo cáo nghiệm thu Phase 6. |
 | **7** | **Human-Centric UI/UX Simplification & Interactive Platform Guide**<br/>*Tối giản hóa toàn diện ngôn ngữ và giao diện: Chuyển toàn bộ thuật ngữ chuyên ngành rườm rà vào trang "Hệ Thống Nền Tảng" riêng biệt; tinh gọn các trang chính theo phong cách tông màu trầm dịu nhẹ, chuẩn Production dễ dùng cho mọi nhân viên.* | ✅ **Hoàn thành** | Đã nghiệm thu trang /he-thong, loại bỏ thuật ngữ hardcore, tối ưu màu trầm dịu mắt và build thành công. |
+| **8** | **Production Shared License Pool & Dynamic Vault Activation Engine**<br/>*Chuẩn hóa cơ chế mua và chia sẻ bản quyền AI doanh nghiệp: Phân tách rõ vòng đời kích hoạt Vault (Chờ Admin nạp bản quyền vs Sẵn sàng vs Đầy ghế); cập nhật đồng bộ cẩm nang /he-thong và giao diện trang chủ phản ánh chính xác mô hình Production.* | ✅ **Hoàn thành** | Đã nghiệm thu mô hình Shared License Pool, cập nhật /he-thong, nâng cấp thẻ công cụ và build thành công. |
 
 ---
 
@@ -71,6 +72,12 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 - **Cột mốc M7.2 (Dedicated Platform Guide Page `/he-thong`):** Xây dựng trang "Hệ Thống Nền Tảng" chuyên biệt, trực quan, giải thích toàn bộ cơ chế hoạt động, hướng dẫn nhân viên từng bước, cơ chế an toàn tài khoản dùng chung và mục FAQ dễ hiểu.
 - **Cột mốc M7.3 (Jargon-Free Core Pages):** Tinh gọn triệt để các trang chính (`/`, `/admin`, `/audit`), loại bỏ hoàn toàn các thuật ngữ mật mã/kỹ thuật rườm rà, thay bằng ngôn ngữ tự nhiên, thân thiện với mọi người dùng.
 - **Cột mốc M7.4 (Simplified Navigation & Activity Log):** Chuẩn hóa lại thanh điều hướng và chuyển đổi trang `/audit` thành "Nhật Ký Sử Dụng" minh bạch, trực quan.
+
+### Phase 8: Production Shared License Pool & Dynamic Vault Activation Engine (✅ Hoàn thành)
+> *Báo cáo nghiệm thu chi tiết: Xem tại [docs/reports/PHASE-8-IMPLEMENTATION-REPORT.md](./reports/PHASE-8-IMPLEMENTATION-REPORT.md).*
+- **Cột mốc M8.1 (Shared License Pool Specification):** Tài liệu hóa chi tiết cơ chế mua bản quyền theo ghế (Per-Seat Licensing) và giải pháp chia sẻ linh hoạt qua Vault + Upstash Redis Mutex.
+- **Cột mốc M8.2 (Visual Vault Activation Lifecycle):** Nâng cấp giao diện hiển thị thẻ công cụ AI: Thể hiện rõ 3 trạng thái thực tế: (1) Chưa kích hoạt / Chờ Admin kết nối, (2) Đã kích hoạt & Sẵn sàng (X/Y ghế), (3) Đang bận (X/X ghế).
+- **Cột mốc M8.3 (Interactive Educational Guide Update):** Cập nhật trang `/he-thong` bổ sung sơ đồ trực quan và hướng dẫn chi tiết cho Admin và Nhân viên về cách thức kết nối tài khoản bản quyền.
 
 ---
 

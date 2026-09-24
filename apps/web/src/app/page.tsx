@@ -577,9 +577,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-mint-50 text-mint-700 border border-mint-200">
-                              SẴN SÀNG
-                            </span>
+                            {isVaultConfigured ? (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-mint-50 text-mint-700 border border-mint-200">
+                                SẴN SÀNG
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                CHỜ KẾT NỐI
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -588,8 +594,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           {details.description}
                         </p>
 
-                        {/* Shared Vault Lease Mutex Indicator */}
-                        {isVaultConfigured && (
+                        {/* Shared Vault Lease Mutex Indicator / Unconfigured Notice */}
+                        {isVaultConfigured ? (
                           <div className="p-3 rounded-xl bg-cream-50 border border-cream-200 space-y-2">
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="text-ink-600 flex items-center gap-1.5">
@@ -620,24 +626,53 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                               </div>
                             )}
                           </div>
+                        ) : (
+                          <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
+                            <div className="flex items-center gap-1.5 font-semibold text-[11px]">
+                              <Clock className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Chưa kết nối tài khoản bản quyền</span>
+                            </div>
+                            <p className="text-[11px] text-amber-800/80 leading-relaxed">
+                              Quản trị viên cần nạp tài khoản doanh nghiệp vào Kho Mật Mã (Vault) để nhân viên có thể sử dụng.
+                            </p>
+                          </div>
                         )}
                       </div>
 
-                      {/* Launch Button */}
+                      {/* Launch Button or Admin Config Shortcut */}
                       <div className="pt-2">
-                        <a
-                          href={`/api/launch/${grant.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white transition-all shadow-sm active:scale-[0.99] ${
-                            isSeatFull && !vaultInfo?.hasActiveLease
-                              ? "bg-ink-400 hover:bg-ink-500 cursor-not-allowed"
-                              : "bg-mint-600 hover:bg-mint-500 shadow-mint"
-                          }`}
-                        >
-                          <span>{isSeatFull && !vaultInfo?.hasActiveLease ? "Đang bận • Thử lại sau" : "Mở Công Cụ Ngay"}</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
+                        {isVaultConfigured ? (
+                          <a
+                            href={`/api/launch/${grant.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white transition-all shadow-sm active:scale-[0.99] ${
+                              isSeatFull && !vaultInfo?.hasActiveLease
+                                ? "bg-ink-400 hover:bg-ink-500 cursor-not-allowed"
+                                : "bg-mint-600 hover:bg-mint-500 shadow-mint"
+                            }`}
+                          >
+                            <span>{isSeatFull && !vaultInfo?.hasActiveLease ? "Đang bận • Thử lại sau" : "Mở Công Cụ Ngay"}</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        ) : dbEmployee?.role === "ROOT_ADMIN" ? (
+                          <Link
+                            href="/admin"
+                            className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-all shadow-sm"
+                          >
+                            <span>Nạp Tài Khoản Vào Vault</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        ) : (
+                          <button
+                            disabled
+                            className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-cream-200 text-ink-400 cursor-not-allowed flex items-center justify-center gap-2 border border-cream-300"
+                            title="Chờ Quản trị viên kết nối tài khoản bản quyền"
+                          >
+                            <span>Chờ Admin Kích Hoạt</span>
+                            <Clock className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

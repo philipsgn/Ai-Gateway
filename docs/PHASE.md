@@ -1,79 +1,49 @@
-# Phase 7: Human-Centric UI/UX Simplification & Interactive Platform Guide
+# Phase 8: Production Shared License Pool & Dynamic Vault Activation Engine
 
 ## 1. Bối Cảnh & Mục Tiêu Nghiệp Vụ (Context & Objective)
 
-Hệ thống đã đạt mức độ hoàn thiện kỹ thuật cao (100% Real Infrastructure, Zero Mock, AES-256-GCM, Redis Lease Mutex, WORM Trigger). Tuy nhiên, phản hồi thực tế từ người dùng cho thấy:
-1. **Rào cản ngôn ngữ chuyên ngành (Hardcore Jargon):** Các trang chính hiện tại lạm dụng quá nhiều thuật ngữ kỹ thuật rườm rà (*"Zero-Knowledge Vault", "WORM Immutability", "SHA-256 Checksum", "Concurrency Lease Mutex", "RFC 4180", "SOC 2 Type II"*), gây bối rối cho nhân viên thông thường và nhà phát triển theo định hướng VibeCoder.
-2. **Thiếu một trang hướng dẫn trực quan (Platform Guide):** Người dùng cần một nơi tập trung để hiểu được: Nền tảng hoạt động như thế nào? Tại sao phải dùng qua Gateway? Cách khởi chạy, cách xin quyền và cách trả ghế ra sao?
-3. **Thị giác & Phong cách thiết kế:** Cần điều chỉnh sang **tông màu trầm dịu nhẹ, thanh lịch (Muted Warm Stone & Calming Sage)**, giảm độ tương phản chói mắt, tạo cảm giác thư thái, tinh tế chuẩn Production SaaS (tương tự Linear, Notion, Raycast).
+Sau phiên thẩm vấn chuyên sâu (/grill-me) cùng người dùng, hệ thống cần giải quyết bài toán bản chất kinh doanh thực tế của các tài khoản AI doanh nghiệp:
+1. **Bản chất Per-Seat Licensing:** Các nhà cung cấp (OpenAI ChatGPT Team, Claude for Work, Google Workspace Gemini, Cursor Business) tính phí theo số lượng người dùng ($20 – $40/user/tháng). Nếu mua 1:1 cho toàn bộ nhân sự thì chi phí cực kỳ lãng phí.
+2. **Cơ chế Shared License Pool:** Công ty mua một số lượng ghế hợp lý (ví dụ: 5 ghế), Admin cấu hình tài khoản doanh nghiệp đó vào **Kho Mật Mã Dùng Chung (`vault_credentials`)** trên Gateway với `maxConcurrency = 5`. Gateway điều phối phiên làm việc an toàn qua Upstash Redis, giúp 50–100 nhân viên dùng chung 5 ghế mà không bị nhà cung cấp khóa tài khoản.
+3. **Cơ chế Kích hoạt Trực quan (Hybrid Template):**
+   - Nếu công cụ có trong Catalog nhưng Admin chưa nạp tài khoản vào Vault: Hiển thị trạng thái `Chưa kích hoạt / Chờ Admin kết nối` (nút mở ứng dụng bị vô hiệu hóa an toàn, không để nhân viên nhảy vào URL rỗng).
+   - Khi Admin nạp tài khoản vào Vault: Trở thành `SẴN SÀNG (X/Y ghế)` và cho phép nhân viên có quyền truy cập làm việc ngay.
 
-**Mục tiêu Phase 7:**
-1. Tạo trang chuyên biệt **"Hệ Thống Nền Tảng" (`/he-thong`)** giải thích trọn vẹn cơ chế vận hành, quy trình sử dụng, bảo mật và hỏi đáp (FAQ) trực quan.
-2. **Tinh gọn hóa 100% các trang chính (`/`, `/admin`, `/audit`)**: Chuyển đổi toàn bộ ngôn ngữ sang từ ngữ thông dụng, dễ hiểu, thân thiện ("Công cụ AI", "Mở ứng dụng", "Đang bận / Còn chỗ", "Xin quyền sử dụng", "Nhật ký hoạt động").
-3. **Nâng cấp Design Tokens:** Tông màu trầm nhẹ nhàng, nền đá ấm dịu (`#F8F7F4`), điểm nhấn sage thanh lịch (`#3B7A57`, `#EBF3EE`), viền mờ tối giản (`#E5E3DC`).
+**Mục tiêu Phase 8:**
+1. Đồng bộ tài liệu kỹ thuật (`PRD.md`, `TECH_ARCHITECTURE.md`, `PLAN.md`, `PHASE.md`) chuẩn hóa 100% cơ chế Shared License Pool và Vòng đời kích hoạt Vault.
+2. Bổ sung mục giải thích chuyên sâu trực quan tại trang **"Hệ Thống" (`/he-thong`)** về cách doanh nghiệp mua gói bản quyền, nạp vào Vault và chia sẻ ghế.
+3. Nâng cấp giao diện thẻ công cụ trên **Trang Chủ (`/`)**: Phân biệt rành mạch giữa công cụ đã nạp Vault (`SẴN SÀNG (X/Y ghế)`) vs công cụ chưa nạp Vault (`Chưa kích hoạt / Chờ Admin kết nối`).
 
 ---
 
 ## 2. Tiêu Chí Nghiệm Thu (Definition of Done)
 
-- [ ] **Trang Hệ Thống Nền Tảng (`/he-thong`):** Đã khởi tạo và hoạt động mượt mà, bao gồm: Sơ đồ cơ chế hoạt động, Hướng dẫn 3 bước cho nhân viên, Cơ chế bảo mật không lộ mật khẩu, và mục Hỏi-Đáp (FAQ).
-- [ ] **Giao Diện Tông Trầm Thanh Lịch (Calm Muted Palette):** Nền web và các thẻ card sở hữu sắc độ trầm ấm dịu mắt, độ tương phản hài hòa, không lòe loẹt.
-- [ ] **Loại Bỏ Thuật Ngữ Hardcore Trên Trang Chính:**
-  - Trang chủ (`/`): Ngôn từ thân thiện, thể hiện rõ danh sách công cụ AI, trạng thái ghế dễ hiểu ("Đang có 1/3 người dùng", "Mở công cụ", "Trả lại ghế", "Gửi yêu cầu").
-  - Thanh Header: Các liên kết chuẩn mực: `Không Gian Làm Việc`, `Hệ Thống`, `Nhật Ký Sử Dụng`, `Quản Trị`.
-  - Cổng Quản Trị (`/admin`): Chuyển sang thuật ngữ quản trị thực tế (Ngân sách, Tài khoản dùng chung, Phân quyền).
-  - Cổng Kiểm Toán (`/audit`): Chuyển thành "Nhật Ký Hoạt Động & Thống Kê" gần gũi.
-- [ ] **Bảo Toàn 100% Hạ Tầng Kỹ Thuật Thật:** Không mock, toàn bộ kết nối PostgreSQL, Upstash Redis, Google OAuth, mã hóa AES-256-GCM tiếp tục vận hành chuẩn xác.
-- [ ] **Kiểm Tra Không Mock:** `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả.
-- [ ] **Build Thành Công:** `npx turbo build` thành công với mã thoát 0.
+- [ ] **Đồng Bộ Tài Liệu 100%:** 4 file tài liệu chuẩn (`PRD.md`, `TECH_ARCHITECTURE.md`, `PLAN.md`, `PHASE.md`) phản ánh chính xác mô hình Shared License Pool và vòng đời Vault.
+- [ ] **Cập Nhật Cẩm Nang Trực Quan (`/he-thong`):** Trang web hiển thị sơ đồ và hướng dẫn rõ ràng: Tại sao mua 5 ghế dùng cho 50 người, Admin nạp vào Vault thế nào và Gateway điều phối ra sao.
+- [ ] **Nâng Cấp Giao Diện Trang Chủ (`/`):**
+  - Thẻ công cụ có tài khoản Vault: Hiển thị số ghế thời gian thực, nút *"Mở công cụ ngay"*.
+  - Thẻ công cụ chưa có tài khoản Vault: Hiển thị nhãn *"Chưa kích hoạt"* và hướng dẫn Admin kết nối tại `/admin`.
+- [ ] **Giữ Vững 100% Zero Mock:** Không dùng class giả lập, kiểm tra `git grep -i "Mock"` = 0.
+- [ ] **Kiểm Tra Build Thành Công:** `npx turbo build` hoàn tất với mã thoát 0.
 
 ---
 
-## 3. Ngoài Phạm Vi (Out of Scope)
+## 3. Kế Hoạch Phân Rã Nhiệm Vụ (Task Breakdown)
 
-- ❌ Không thay đổi logic backend nghiệp vụ hay cấu trúc schema cơ sở dữ liệu đã kiểm thử thành công.
-- ❌ Không thêm các thư viện CSS nặng nề làm giảm tốc độ tải trang.
+### Nhóm 1: Nâng Cấp Logic Trang Chủ & Trạng Thái Kích Hoạt Vault
+- [ ] Cập nhật `apps/web/src/app/page.tsx`:
+  - Truy vấn thông tin `vaultCredentials` để xác định trạng thái kích hoạt thực tế của từng dịch vụ.
+  - Render trạng thái công cụ:
+    - Nếu đã có Vault: `SẴN SÀNG` + Tình trạng ghế (`X/Y người đang dùng`).
+    - Nếu chưa có Vault: `Chờ Admin kết nối` + Vô hiệu hóa nút mở ứng dụng, gợi ý Admin vào `/admin` nạp tài khoản.
 
----
+### Nhóm 2: Nâng Cấp Cẩm Nang Hệ Thống Nền Tảng (`/he-thong`)
+- [ ] Cập nhật `apps/web/src/app/he-thong/page.tsx`:
+  - Thêm phần minh họa trực quan: **"Mô Hình Bản Quyền Dùng Chung (Shared License Pool) & Cách Admin Kích Hoạt"**.
+  - Giải thích rõ: Mua gói Team/Business theo ghế thế nào, Admin nạp vào Vault ra sao, và tại sao tiết kiệm chi phí mà không lo bị khóa tài khoản.
 
-## 4. Kế Hoạch Phân Rã Nhiệm Vụ (Task Breakdown)
-
-### Nhóm 1: Hệ Thống Bảng Màu Trầm Dịu Mắt (Calm Muted Design System)
-- [ ] Cập nhật `apps/web/tailwind.config.js`: Tinh chỉnh bảng màu sang tông trầm ấm (Muted Warm Stone, Gentle Sage, Soft Slate):
-  - `stone`: `#FAF9F6`, `#F4F2EC`, `#ECE8E0`, `#DDD8CD`
-  - `sage`: `#427A5B`, `#EAF2ED`, `#D5E5DB`, `#2D5940`
-  - `slate`: `#24292F`, `#4A5568`, `#718096`
-- [ ] Cập nhật `apps/web/src/styles/globals.css`: Tối ưu các thẻ `card-muted`, hiệu ứng hover nhẹ nhàng, nền êm dịu.
-
-### Nhóm 2: Xây Dựng Trang "Hệ Thống Nền Tảng" (`apps/web/src/app/he-thong/page.tsx`)
-- [ ] Thiết kế trang `/he-thong` với bố cục thông thoáng, thanh lịch:
-  - [ ] **Phần 1: Giới thiệu & Triết lý vận hành**: Tại sao doanh nghiệp cần AI Access Gateway? (Quản lý tập trung, tối ưu chi phí bản quyền).
-  - [ ] **Phần 2: Cơ chế hoạt động trực quan**: Minh họa cách tài khoản dùng chung được ủy quyền bảo mật mà không để lộ mật khẩu gốc.
-  - [ ] **Phần 3: Hướng dẫn nhanh cho nhân viên**: 3 bước làm việc (Chọn công cụ -> Khởi chạy an toàn -> Trả ghế khi hoàn tất).
-  - [ ] **Phần 4: Cơ chế tự phục vụ**: Hướng dẫn gửi yêu cầu cấp quyền và cách ban quản trị phê duyệt.
-  - [ ] **Phần 5: Câu hỏi thường gặp (FAQ)**: Giải đáp các băn khoăn về quyền riêng tư, hạn mức sử dụng và xử lý khi hết ghế.
-
-### Nhóm 3: Tinh Gọn Hóa Header & Footer (`apps/web/src/app/layout.tsx`)
-- [ ] Nâng cấp thanh điều hướng:
-  - Thêm liên kết nổi bật tới trang **"Hệ Thống"**.
-  - Đổi tên "Tuân Thủ & WORM" thành **"Nhật Ký Sử Dụng"** (hoặc "Hoạt Động").
-  - Đổi huy hiệu SLA sang ngôn ngữ thân thiện: `Hệ thống ổn định 99.9%`.
-- [ ] Tinh giản Footer: Ngôn từ cô đọng, thanh lịch, liên kết nhanh.
-
-### Nhóm 4: Tinh Gọn Hóa Không Gian Làm Việc Nhân Viên (`apps/web/src/app/page.tsx`)
-- [ ] Rà soát và loại bỏ toàn bộ từ ngữ đao to búa lớn khỏi Hero Section và màn hình đăng nhập.
-- [ ] Tinh gọn thẻ dịch vụ AI:
-  - Hiển thị rõ ràng: Tên công cụ, Trạng thái (`Sẵn sàng` / `Đang bận: X/Y người dùng`).
-  - Nút bấm trực quan: `Mở công cụ ngay` và `Trả lại chỗ`.
-  - Thông báo nhẹ nhàng khi đầy người: *"Công cụ hiện có đủ người dùng, bạn vui lòng quay lại sau ít phút nhé"*.
-- [ ] Danh mục công cụ yêu cầu cấp quyền: Thiết kế dạng danh sách tối giản, 1-click gửi yêu cầu với lời nhắc thân thiện.
-
-### Nhóm 5: Tinh Gọn Hóa Cổng Quản Trị & Trang Nhật Ký
-- [ ] Trang Quản Trị (`apps/web/src/app/admin/page.tsx`): Dùng từ ngữ nghiệp vụ đời thường (Ngân sách phòng ban, Quản lý tài khoản công ty, Cấp quyền sử dụng).
-- [ ] Trang Nhật Ký (`apps/web/src/app/audit/page.tsx`): Đổi tên thành "Nhật Ký Hoạt Động", trình bày dòng thời gian sự kiện trực quan, dễ hiểu ai đã mở công cụ nào.
-
-### Nhóm 6: Kiểm Chứng Kỹ Thuật & Đóng Giai Đoạn
+### Nhóm 3: Kiểm Chứng Kỹ Thuật & Nghiệm Thu
 - [ ] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`.
-- [ ] Kiểm tra TypeScript compilation: `npx tsc --noEmit`.
+- [ ] Kiểm tra TypeScript compilation: `npx tsc --project apps/web/tsconfig.json --noEmit`.
 - [ ] Chạy `npx turbo build` đảm bảo mã thoát 0.
-- [ ] Đẩy commit và cập nhật báo cáo nghiệm thu.
+- [ ] Lập báo cáo nghiệm thu `docs/reports/PHASE-8-IMPLEMENTATION-REPORT.md`.
