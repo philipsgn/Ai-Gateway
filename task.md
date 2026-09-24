@@ -27,12 +27,12 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 6, bám sát 100% phâ
   - [x] Thêm Server Action `handleRequestAccess`: Cho phép nhân viên bấm "Yêu cầu cấp quyền", tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs` có ký SHA-256
 
 ## Nhóm 4: Cổng Quản Trị Doanh Nghiệp Tinh Hoa (`apps/web/src/app/admin/page.tsx`)
-- [ ] Chuyển đổi toàn bộ giao diện Cổng Quản Trị sang hệ thiết kế Mint & Cream:
-  - Bảng tổng quan KPI với thẻ số liệu tương phản cao, đổ bóng nhẹ
-  - Tab Quản lý Ngân sách phòng ban & Hạn mức chi tiêu
-  - Tab Kho Mật Mã Bản Quyền Dùng Chung (Shared Vault): Thẻ tài khoản mã hóa AES-256-GCM, số ghế trực tiếp từ Redis, nút xoay vòng mật khẩu và tạm dừng/kích hoạt
-  - Tab Ma Trận Phân Quyền Nhân Sự: Tìm kiếm, cấp mới quyền AI với thời hạn, thu hồi tức thì
-  - Nút xuất nhanh báo cáo tuân thủ CSV
+- [x] Chuyển đổi toàn bộ giao diện Cổng Quản Trị sang hệ thiết kế Mint & Cream:
+  - [x] Bảng tổng quan KPI với thẻ số liệu tương phản cao, đổ bóng nhẹ
+  - [x] Tab Quản lý Ngân sách phòng ban & Hạn mức chi tiêu
+  - [x] Tab Kho Mật Mã Bản Quyền Dùng Chung (Shared Vault): Thẻ tài khoản mã hóa AES-256-GCM, số ghế trực tiếp từ Redis, nút xoay vòng mật khẩu và tạm dừng/kích hoạt
+  - [x] Tab Ma Trận Phân Quyền Nhân Sự: Tìm kiếm, cấp mới quyền AI với thời hạn, thu hồi tức thì
+  - [x] Nút xuất nhanh báo cáo tuân thủ CSV
 
 ## Nhóm 5: Trung Tâm Tuân Thủ & Phân Tích ROI (`apps/web/src/app/audit/page.tsx`)
 - [ ] Tái thiết kế trang Kiểm toán Tuân thủ:

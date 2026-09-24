@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { db, employees, grants, auditLogs, departments, vaultCredentials } from "@/db";
+import { db, employees, grants, departments, vaultCredentials } from "@/db";
 import { desc, eq } from "drizzle-orm";
 import {
   ShieldAlert,
@@ -32,6 +32,8 @@ import {
   EyeOff,
   Radio,
   Download,
+  Calendar,
+  Zap,
 } from "lucide-react";
 import { getAllDepartmentsBudgetStats, DepartmentBudgetSummary } from "@/lib/budget";
 import { encryptCredential, maskSecret } from "@/lib/vault";
@@ -47,25 +49,27 @@ export default async function AdminPortalPage() {
   // 1. Role Guard: Non-root users or unauthenticated users get 403 Forbidden view
   if (!session || !isRootAdmin) {
     return (
-      <div className="max-w-2xl mx-auto my-12 p-8 rounded-2xl glass-panel border border-rose-500/30 text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 mx-auto flex items-center justify-center">
+      <div className="max-w-2xl mx-auto my-12 p-8 rounded-2xl card-cream border border-rose-200 text-center space-y-6 bg-white shadow-cream">
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 mx-auto flex items-center justify-center">
           <ShieldAlert className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">
             403 — Quyền Truy Cập Bị Từ Chối (Access Denied)
           </h1>
-          <p className="text-slate-300 text-sm leading-relaxed">
+          <p className="text-ink-600 text-sm leading-relaxed">
             Khu vực này chỉ dành riêng cho <strong>Root Administrator</strong> được cấu hình trong biến môi trường{" "}
-            <code className="text-rose-300 font-mono text-xs bg-slate-900 px-1.5 py-0.5 rounded">ROOT_ADMIN_EMAIL</code>.
+            <code className="text-rose-700 font-mono text-xs bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+              ROOT_ADMIN_EMAIL
+            </code>.
           </p>
-          <p className="text-slate-400 text-xs">
+          <p className="text-ink-500 text-xs">
             Tài khoản hiện tại của bạn:{" "}
-            <span className="font-mono text-slate-200">
+            <span className="font-mono text-ink-800 font-medium">
               {session?.user?.email || "Chưa đăng nhập"}
             </span>{" "}
             (Vai trò:{" "}
-            <span className="font-mono text-amber-400">
+            <span className="font-mono text-amber-700 font-semibold">
               {session?.user?.role || "GUEST"}
             </span>
             )
@@ -74,10 +78,10 @@ export default async function AdminPortalPage() {
         <div className="pt-2">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-colors border border-slate-700"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-sm font-semibold transition-all shadow-mint"
           >
             <ArrowLeft className="w-4 h-4" />
-            Quay về Trang chủ
+            <span>Quay về Không Gian Làm Việc</span>
           </Link>
         </div>
       </div>
@@ -299,7 +303,6 @@ export default async function AdminPortalPage() {
     const expiresDays = expiresDaysStr ? parseInt(expiresDaysStr, 10) : 0;
     const expiresAt = expiresDays > 0 ? new Date(Date.now() + expiresDays * 86400000) : null;
 
-    // 1. Insert into grants table
     const [newGrant] = await db
       .insert(grants)
       .values({
@@ -311,7 +314,6 @@ export default async function AdminPortalPage() {
       })
       .returning();
 
-    // 2. Append to audit_logs table with SHA-256 Checksum
     await logAuditEvent({
       actorId: currentSession.user.id,
       action: "GRANT_ISSUED",
@@ -339,14 +341,11 @@ export default async function AdminPortalPage() {
     const grantId = formData.get("grantId") as string;
     if (!grantId) return;
 
-    // Fetch existing grant
     const [existing] = await db.select().from(grants).where(eq(grants.id, grantId)).limit(1);
     if (!existing) return;
 
-    // 1. Update status to REVOKED
     await db.update(grants).set({ status: "REVOKED" }).where(eq(grants.id, grantId));
 
-    // 2. Append to audit_logs table with SHA-256 Checksum
     await logAuditEvent({
       actorId: currentSession.user.id,
       action: "GRANT_REVOKED",
@@ -362,7 +361,7 @@ export default async function AdminPortalPage() {
     revalidatePath("/");
   }
 
-  // Fetch real data directly from PostgreSQL
+  // Fetch real data directly from PostgreSQL & Redis
   let allEmployees: (typeof employees.$inferSelect)[] = [];
   let allGrantsList: any[] = [];
   let allDepartments: (typeof departments.$inferSelect)[] = [];
@@ -375,7 +374,6 @@ export default async function AdminPortalPage() {
     allDepartments = await db.select().from(departments).orderBy(departments.name);
     departmentBudgetSummaries = await getAllDepartmentsBudgetStats();
 
-    // Query vault credentials and active leases from Upstash Redis
     const rawVaultCreds = await db.select().from(vaultCredentials).orderBy(desc(vaultCredentials.createdAt));
     allVaultCreds = await Promise.all(
       rawVaultCreds.map(async (c) => {
@@ -386,8 +384,7 @@ export default async function AdminPortalPage() {
         };
       })
     );
-    
-    // Query grants joined with employee details including usage tracking metrics
+
     allGrantsList = await db
       .select({
         id: grants.id,
@@ -417,26 +414,25 @@ export default async function AdminPortalPage() {
   const totalLaunchesCount = allGrantsList.reduce((acc, g) => acc + (Number(g.accessCount) || 0), 0);
   const totalActiveLeases = allVaultCreds.reduce((acc, c) => acc + (c.activeCount || 0), 0);
 
-  // Budget calculations across all departments
   const totalCompanyBudgetUsd = departmentBudgetSummaries.reduce((acc, d) => acc + d.monthlyBudgetUsd, 0);
   const totalCompanySpentUsd = departmentBudgetSummaries.reduce((acc, d) => acc + d.spentUsd, 0);
   const alertDeptsCount = departmentBudgetSummaries.filter((d) => d.status === "WARNING" || d.status === "EXCEEDED").length;
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      {/* Top Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-amber-500/30 relative overflow-hidden bg-gradient-to-r from-amber-500/5 via-slate-900 to-indigo-500/5">
+    <div className="space-y-8 max-w-5xl mx-auto pb-12">
+      {/* Top Executive Admin Banner */}
+      <div className="card-cream p-6 sm:p-8 bg-gradient-to-r from-white via-cream-50 to-mint-50/40 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
               <span>Root Administrator Portal</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-900">
               Cổng Quản Trị Phân Quyền & Giám Sát AI
             </h1>
-            <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
-              Quản lý danh mục nhân viên, cấp phát quyền và theo dõi tần suất sử dụng thực tế của từng dịch vụ AI (ChatGPT, Claude, Gemini, Cursor). Mọi hành động khởi chạy và phân quyền đều được lưu vết kiểm toán vĩnh viễn (Audit Log).
+            <p className="text-ink-600 text-sm max-w-xl leading-relaxed">
+              Quản trị danh bạ nhân sự, cấp phát quyền và theo dõi tần suất sử dụng thực tế của từng dịch vụ AI. Tự động mã hóa Vault AES-256-GCM và lưu vết kiểm toán bất biến (WORM Audit Trail).
             </p>
           </div>
 
@@ -444,7 +440,7 @@ export default async function AdminPortalPage() {
             <a
               href="/api/audit/export?format=csv"
               download
-              className="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              className="px-3.5 py-2.5 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-mint active:scale-[0.99]"
               title="Xuất báo cáo tuân thủ WORM định dạng CSV chuẩn RFC 4180"
             >
               <Download className="w-3.5 h-3.5" />
@@ -452,95 +448,95 @@ export default async function AdminPortalPage() {
             </a>
             <Link
               href="/audit"
-              className="px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-2 transition-colors"
+              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-cream-100 text-ink-700 text-xs font-semibold border border-cream-300 flex items-center gap-2 transition-colors shadow-sm"
             >
               <span>Nhật Ký & Tuân Thủ</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-ink-400" />
             </Link>
           </div>
         </div>
 
-        {/* Quick Stats Grid with Total AI Launches, Budget Governance, and Shared Vault Leases */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+        {/* Quick KPI Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-6 border-t border-cream-200">
+          <div className="p-3.5 rounded-xl bg-white border border-cream-200 shadow-sm flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-cream-200 text-ink-700 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[10px] text-slate-400 font-medium">Nhân viên</p>
-              <p className="text-base font-bold text-white mt-0.5">{allEmployees.length}</p>
+              <p className="text-[10px] text-ink-500 font-medium">Nhân viên</p>
+              <p className="text-base font-bold text-ink-900 mt-0.5 font-mono">{allEmployees.length}</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="p-3.5 rounded-xl bg-white border border-cream-200 shadow-sm flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-mint-50 text-mint-600 flex items-center justify-center shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[10px] text-slate-400 font-medium">Quyền ACTIVE</p>
-              <p className="text-base font-bold text-emerald-400 mt-0.5">{activeGrantsCount}</p>
+              <p className="text-[10px] text-ink-500 font-medium">Quyền ACTIVE</p>
+              <p className="text-base font-bold text-mint-600 mt-0.5 font-mono">{activeGrantsCount}</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="p-3.5 rounded-xl bg-white border border-cream-200 shadow-sm flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[10px] text-slate-400 font-medium">Lượt launch</p>
-              <p className="text-base font-bold text-amber-300 mt-0.5">{totalLaunchesCount}</p>
+              <p className="text-[10px] text-ink-500 font-medium">Lượt launch</p>
+              <p className="text-base font-bold text-amber-700 mt-0.5 font-mono">{totalLaunchesCount}</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+          <div className="p-3.5 rounded-xl bg-white border border-cream-200 shadow-sm flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-mint-50 text-mint-600 flex items-center justify-center shrink-0">
               <DollarSign className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[10px] text-slate-400 font-medium">Chi phí AI</p>
-              <p className="text-base font-bold text-cyan-300 mt-0.5">${totalCompanySpentUsd.toFixed(2)}</p>
+              <p className="text-[10px] text-ink-500 font-medium">Chi phí AI</p>
+              <p className="text-base font-bold text-mint-700 mt-0.5 font-mono">${totalCompanySpentUsd.toFixed(2)}</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center shrink-0">
-              <Lock className="w-4 h-4" />
+          <div className="p-3.5 rounded-xl bg-white border border-cream-200 shadow-sm flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-cream-200 text-ink-700 flex items-center justify-center shrink-0">
+              <Lock className="w-4 h-4 text-mint-600" />
             </div>
             <div>
-              <p className="text-[10px] text-slate-400 font-medium">Tài khoản Vault</p>
-              <p className="text-base font-bold text-violet-300 mt-0.5">{allVaultCreds.length}</p>
+              <p className="text-[10px] text-ink-500 font-medium">Tài khoản Vault</p>
+              <p className="text-base font-bold text-ink-900 mt-0.5 font-mono">{allVaultCreds.length}</p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0">
+          <div className="p-3.5 rounded-xl bg-white border border-cream-200 shadow-sm flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-mint-100 text-mint-700 flex items-center justify-center shrink-0">
               <Radio className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-[10px] text-slate-400 font-medium">Phiên Live (Redis)</p>
-              <p className="text-base font-bold text-rose-300 mt-0.5">{totalActiveLeases}</p>
+              <p className="text-[10px] text-ink-500 font-medium">Phiên Live (Redis)</p>
+              <p className="text-base font-bold text-mint-600 mt-0.5 font-mono">{totalActiveLeases}</p>
             </div>
           </div>
         </div>
 
         {/* Company Budget Secondary Summary Banner */}
-        <div className="mt-4 p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-300 gap-3">
+        <div className="mt-4 p-3.5 rounded-xl bg-white/70 border border-cream-200 flex flex-wrap items-center justify-between text-xs text-ink-600 gap-3">
           <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-indigo-400" />
-            <span>Tổng ngân sách AI: <strong className="text-white">${totalCompanyBudgetUsd.toFixed(2)}</strong></span>
-            <span className="text-slate-500">|</span>
+            <Building2 className="w-4 h-4 text-mint-600" />
+            <span>Tổng ngân sách AI: <strong className="text-ink-900">${totalCompanyBudgetUsd.toFixed(2)}</strong></span>
+            <span className="text-cream-400">|</span>
             <span>{allDepartments.length} phòng ban</span>
           </div>
 
           <div className="flex items-center gap-2">
             {alertDeptsCount > 0 ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
                 {alertDeptsCount} phòng ban chạm ngưỡng cảnh báo / vượt trần
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-mint-50 text-mint-800 border border-mint-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-mint-600" />
                 Mọi phòng ban trong giới hạn ngân sách
               </span>
             )}
@@ -549,24 +545,24 @@ export default async function AdminPortalPage() {
       </div>
 
       {fetchError && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">
           Lỗi truy vấn cơ sở dữ liệu: {fetchError}
         </div>
       )}
 
       {/* ==================== SECTION: DEPARTMENT & BUDGET GOVERNANCE ==================== */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+      <div className="card-cream p-6 sm:p-8 bg-white space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
+            <div className="w-9 h-9 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center border border-mint-200">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Quản Trị Ngân Sách & Phòng Ban (Department & Quota Governance)</h2>
-              <p className="text-xs text-slate-400">Thiết lập trần chi phí AI tháng theo bộ phận, phân bổ nhân sự và giám sát định mức chi tiêu</p>
+              <h2 className="text-lg font-bold text-ink-900">Quản Trị Ngân Sách & Phòng Ban (Department Governance)</h2>
+              <p className="text-xs text-ink-500">Thiết lập trần chi phí AI tháng theo bộ phận, phân bổ nhân sự và giám sát định mức chi tiêu</p>
             </div>
           </div>
-          <span className="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-lg border border-cyan-500/20">
+          <span className="text-xs font-mono text-mint-800 bg-mint-50 px-3 py-1 rounded-lg border border-mint-200 font-semibold">
             {allDepartments.length} phòng ban
           </span>
         </div>
@@ -574,48 +570,48 @@ export default async function AdminPortalPage() {
         {/* 2 Forms: Create Dept & Assign Employee */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           {/* Form 1: Create Department */}
-          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <PlusCircle className="w-4 h-4 text-cyan-400" />
+          <div className="p-5 rounded-2xl bg-cream-50/70 border border-cream-200 space-y-4">
+            <h3 className="text-sm font-semibold text-ink-900 flex items-center gap-2">
+              <PlusCircle className="w-4 h-4 text-mint-600" />
               Tạo Phòng Ban Mới
             </h3>
             <form action={handleCreateDepartment} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">Tên phòng ban</label>
+                <label className="block text-[11px] font-semibold text-ink-700 mb-1">Tên phòng ban</label>
                 <input
                   type="text"
                   name="name"
                   required
                   placeholder="Kỹ thuật phần mềm (Engineering)"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none focus:border-mint-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Mã code</label>
+                  <label className="block text-[11px] font-semibold text-ink-700 mb-1">Mã code</label>
                   <input
                     type="text"
                     name="code"
                     required
                     placeholder="ENG"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 uppercase focus:outline-none focus:border-cyan-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 placeholder:text-ink-400 uppercase focus:outline-none focus:border-mint-500 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Ngân sách tháng ($)</label>
+                  <label className="block text-[11px] font-semibold text-ink-700 mb-1">Ngân sách tháng ($)</label>
                   <input
                     type="number"
                     step="0.01"
                     name="monthlyBudgetUsd"
                     required
                     defaultValue="500.00"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-mint-500 font-mono"
                   />
                 </div>
               </div>
               <button
                 type="submit"
-                className="w-full py-2 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all shadow-md shadow-cyan-600/20 active:scale-[0.98]"
+                className="w-full py-2.5 px-4 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-xs font-semibold transition-all shadow-mint active:scale-[0.98]"
               >
                 Tạo Phòng Ban
               </button>
@@ -623,23 +619,23 @@ export default async function AdminPortalPage() {
           </div>
 
           {/* Form 2: Assign Employee to Department */}
-          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-indigo-400" />
+          <div className="p-5 rounded-2xl bg-cream-50/70 border border-cream-200 space-y-4">
+            <h3 className="text-sm font-semibold text-ink-900 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-mint-600" />
               Phân Bổ Nhân Viên Vào Phòng Ban
             </h3>
             {allDepartments.length === 0 ? (
-              <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
                 Chưa có phòng ban nào. Hãy tạo phòng ban trước.
               </div>
             ) : (
               <form action={handleAssignDepartment} className="space-y-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Chọn nhân viên</label>
+                  <label className="block text-[11px] font-semibold text-ink-700 mb-1">Chọn nhân viên</label>
                   <select
                     name="employeeId"
                     required
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-mint-500"
                   >
                     <option value="">-- Chọn nhân viên --</option>
                     {allEmployees.map((emp) => (
@@ -650,11 +646,11 @@ export default async function AdminPortalPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-300 mb-1">Gán vào phòng ban</label>
+                  <label className="block text-[11px] font-semibold text-ink-700 mb-1">Gán vào phòng ban</label>
                   <select
                     name="departmentId"
                     required
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-mint-500"
                   >
                     <option value="NONE">-- Không trực thuộc (Bỏ gán) --</option>
                     {allDepartments.map((dept) => (
@@ -666,7 +662,7 @@ export default async function AdminPortalPage() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-600/20 active:scale-[0.98]"
+                  className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-cream-100 text-ink-800 text-xs font-semibold border border-cream-300 shadow-sm transition-all active:scale-[0.98]"
                 >
                   Cập Nhật Phân Bổ
                 </button>
@@ -678,12 +674,12 @@ export default async function AdminPortalPage() {
         {/* Table: Department Budget & Quota Tracking */}
         {departmentBudgetSummaries.length > 0 && (
           <div className="pt-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-3">
               Theo Dõi Mức Tiêu Thụ Ngân Sách Từng Phòng Ban
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[11px]">
+            <div className="overflow-x-auto card-cream border border-cream-200">
+              <table className="w-full text-left text-xs text-ink-700">
+                <thead className="bg-cream-100/90 text-ink-600 border-b border-cream-200 uppercase font-mono text-[11px]">
                   <tr>
                     <th className="py-3 px-4">Phòng ban</th>
                     <th className="py-3 px-4">Nhân sự</th>
@@ -694,44 +690,44 @@ export default async function AdminPortalPage() {
                     <th className="py-3 px-4">Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-sans">
+                <tbody className="divide-y divide-cream-200/80 font-sans">
                   {departmentBudgetSummaries.map((dept) => {
                     const isExceeded = dept.status === "EXCEEDED";
                     const isWarning = dept.status === "WARNING";
-                    const barColor = isExceeded ? "bg-rose-500" : isWarning ? "bg-amber-400" : "bg-emerald-400";
+                    const barColor = isExceeded ? "bg-rose-500" : isWarning ? "bg-amber-400" : "bg-mint-500";
                     return (
-                      <tr key={dept.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-100 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <tr key={dept.id} className="hover:bg-cream-50/60 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-ink-900 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-mint-500" />
                             {dept.name}
                           </div>
-                          <span className="text-[10px] font-mono text-slate-500">Mã: {dept.code}</span>
+                          <span className="text-[10px] font-mono text-ink-400">Mã: {dept.code}</span>
                         </td>
 
-                        <td className="py-3 px-4 font-mono">
+                        <td className="py-3.5 px-4 font-mono">
                           {dept.employeeCount} nhân viên
                         </td>
 
-                        <td className="py-3 px-4 font-mono font-medium text-slate-200">
+                        <td className="py-3.5 px-4 font-mono font-medium text-ink-800">
                           ${dept.monthlyBudgetUsd.toFixed(2)}
                         </td>
 
-                        <td className="py-3 px-4 font-mono font-bold text-amber-300">
+                        <td className="py-3.5 px-4 font-mono font-bold text-amber-700">
                           ${dept.spentUsd.toFixed(2)}
                         </td>
 
-                        <td className="py-3 px-4 font-mono text-emerald-300">
+                        <td className="py-3.5 px-4 font-mono text-mint-700 font-semibold">
                           ${dept.remainingUsd.toFixed(2)}
                         </td>
 
-                        <td className="py-3 px-4 w-48">
+                        <td className="py-3.5 px-4 w-48">
                           <div className="space-y-1">
                             <div className="flex justify-between text-[10px] font-mono">
-                              <span>{dept.percentageUsed}%</span>
-                              <span className="text-slate-500">{dept.totalLaunches} lượt</span>
+                              <span className="font-semibold">{dept.percentageUsed}%</span>
+                              <span className="text-ink-400">{dept.totalLaunches} lượt</span>
                             </div>
-                            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                            <div className="w-full h-1.5 rounded-full bg-cream-200 overflow-hidden">
                               <div
                                 className={`h-full ${barColor} transition-all duration-500`}
                                 style={{ width: `${Math.min(100, dept.percentageUsed)}%` }}
@@ -740,20 +736,20 @@ export default async function AdminPortalPage() {
                           </div>
                         </td>
 
-                        <td className="py-3 px-4">
+                        <td className="py-3.5 px-4">
                           {isExceeded ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30">
-                              <AlertTriangle className="w-3 h-3 text-rose-400" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              <AlertTriangle className="w-3 h-3 text-rose-500" />
                               VƯỢT HẠN MỨC
                             </span>
                           ) : isWarning ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                              <AlertTriangle className="w-3 h-3 text-amber-400" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              <AlertTriangle className="w-3 h-3 text-amber-600" />
                               CẢNH BÁO TIỆM CẬN
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              <CheckCircle2 className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-mint-50 text-mint-800 border border-mint-200">
+                              <CheckCircle2 className="w-3 h-3 text-mint-600" />
                               AN TOÀN
                             </span>
                           )}
@@ -769,41 +765,41 @@ export default async function AdminPortalPage() {
       </div>
 
       {/* ==================== SECTION: SHARED CREDENTIAL VAULT & CONCURRENCY ==================== */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-violet-500/30 space-y-6 bg-gradient-to-b from-violet-500/5 to-slate-900/40">
+      <div className="card-cream p-6 sm:p-8 bg-white space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center border border-violet-500/20">
+            <div className="w-9 h-9 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center border border-mint-200">
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                Kho Tài Khoản Dùng Chung & Điều Phối Phiên (Shared Credential Vault)
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+              <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
+                Kho Tài Khoản Dùng Chung (Shared Credential Vault)
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-mint-100 text-mint-800 border border-mint-200">
                   AES-256-GCM + Redis Mutex
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">
-                Lưu trữ chuỗi bí mật/mật khẩu tài khoản dùng chung an toàn tuyệt đối. Giới hạn số ghế truy cập đồng thời qua Upstash Redis Lease.
+              <p className="text-xs text-ink-500">
+                Lưu trữ mật khẩu dùng chung an toàn tuyệt đối. Giới hạn số ghế truy cập đồng thời qua Upstash Redis Lease Mutex.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Vault Management Actions Grid */}
+        {/* Vault Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           {/* Panel A: Store New Shared Credential */}
-          <div className="p-4 sm:p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Key className="w-4 h-4 text-violet-400" />
+          <div className="p-5 rounded-2xl bg-cream-50/70 border border-cream-200 space-y-4">
+            <h3 className="text-sm font-semibold text-ink-900 flex items-center gap-2">
+              <Key className="w-4 h-4 text-mint-600" />
               Lưu Trữ Mật Khẩu / API Key Dùng Chung
             </h3>
             <form action={handleCreateVaultCredential} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">Công cụ AI</label>
+                <label className="block text-[11px] font-semibold text-ink-700 mb-1">Công cụ AI</label>
                 <select
                   name="resourceName"
                   required
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-mint-500"
                 >
                   <option value="ChatGPT Team">ChatGPT Team (OpenAI)</option>
                   <option value="Claude 3.5 Sonnet Pro">Claude 3.5 Sonnet Pro (Anthropic)</option>
@@ -815,32 +811,32 @@ export default async function AdminPortalPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">Email / Tên định danh tài khoản dùng chung</label>
+                <label className="block text-[11px] font-semibold text-ink-700 mb-1">Email / Tên định danh tài khoản dùng chung</label>
                 <input
                   type="email"
                   name="accountEmail"
                   required
                   placeholder="shared-eng@company.com"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500 font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-mint-500 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1 flex justify-between">
+                <label className="block text-[11px] font-semibold text-ink-700 mb-1 flex justify-between">
                   <span>Mật khẩu hoặc Master Secret</span>
-                  <span className="text-violet-400 text-[10px]">Tự động mã hóa AES-256-GCM</span>
+                  <span className="text-mint-700 text-[10px] font-semibold">Tự động mã hóa AES-256-GCM</span>
                 </label>
                 <input
                   type="password"
                   name="secret"
                   required
                   placeholder="••••••••••••••••"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500 font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-mint-500 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                <label className="block text-[11px] font-semibold text-ink-700 mb-1">
                   Giới hạn số phiên đồng thời (Concurrency Max Slots)
                 </label>
                 <input
@@ -850,16 +846,13 @@ export default async function AdminPortalPage() {
                   max="50"
                   defaultValue="2"
                   required
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-violet-500 font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-mint-500 font-mono"
                 />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">
-                  Khi đạt giới hạn, người thứ N+1 sẽ bị hoãn cho đến khi đồng nghiệp trả slot.
-                </span>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2 px-4 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-all shadow-md shadow-violet-600/20 active:scale-[0.98]"
+                className="w-full py-2.5 px-4 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-xs font-semibold transition-all shadow-mint active:scale-[0.98]"
               >
                 Mã Hóa & Lưu Vào Vault
               </button>
@@ -867,24 +860,24 @@ export default async function AdminPortalPage() {
           </div>
 
           {/* Panel B: Rotate Existing Credential */}
-          <div className="p-4 sm:p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="p-5 rounded-2xl bg-cream-50/70 border border-cream-200 space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 text-amber-400" />
+              <h3 className="text-sm font-semibold text-ink-900 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-amber-600" />
                 Xoay Vòng Mật Khẩu (Credential Rotation)
               </h3>
               {allVaultCreds.length === 0 ? (
-                <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs">
+                <div className="p-4 rounded-xl bg-cream-100 border border-cream-200 text-ink-600 text-xs">
                   Chưa có tài khoản nào trong Vault để xoay vòng.
                 </div>
               ) : (
                 <form action={handleRotateVaultCredential} className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">Chọn tài khoản Vault cần xoay vòng</label>
+                    <label className="block text-[11px] font-semibold text-ink-700 mb-1">Chọn tài khoản Vault</label>
                     <select
                       name="credentialId"
                       required
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-amber-500"
                     >
                       {allVaultCreds.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -895,23 +888,19 @@ export default async function AdminPortalPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-300 mb-1">Mật khẩu hoặc API Key mới</label>
+                    <label className="block text-[11px] font-semibold text-ink-700 mb-1">Mật khẩu hoặc API Key mới</label>
                     <input
                       type="password"
                       name="newSecret"
                       required
                       placeholder="Nhập khóa/mật khẩu mới..."
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs text-ink-900 focus:outline-none focus:border-amber-500 font-mono"
                     />
                   </div>
 
-                  <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Hệ thống sẽ mã hóa lại bằng khóa mới, cập nhật mốc thời gian <code className="text-amber-300">lastRotatedAt</code> và ghi nhật ký kiểm toán vĩnh viễn.
-                  </p>
-
                   <button
                     type="submit"
-                    className="w-full py-2 px-4 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-all shadow-md shadow-amber-600/20 active:scale-[0.98]"
+                    className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-all shadow-sm active:scale-[0.98]"
                   >
                     Xoay Vòng Mật Khẩu Ngay
                   </button>
@@ -919,9 +908,9 @@ export default async function AdminPortalPage() {
               )}
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-              <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="p-3 rounded-xl bg-white border border-cream-200 text-[11px] text-ink-600 space-y-1">
+              <span className="font-semibold text-ink-800 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-mint-600" />
                 Chuẩn Mã Hóa AES-256-GCM
               </span>
               <p>Mỗi tài khoản được mã hóa với IV ngẫu nhiên 96-bit và Authentication Tag 128-bit chống mọi hành vi giả mạo ciphertext.</p>
@@ -929,23 +918,23 @@ export default async function AdminPortalPage() {
           </div>
         </div>
 
-        {/* Table: Shared Vault Credentials & Live Concurrency Monitor */}
+        {/* Table: Shared Vault Credentials */}
         <div className="pt-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
-            <span>Danh Sách Tài Khoản Trong Vault & Giám Sát Phiên Đồng Thời (Live Redis)</span>
-            <span className="text-[10px] text-slate-500 font-mono font-normal">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-500 mb-3 flex items-center justify-between">
+            <span>Danh Sách Tài Khoản Trong Vault & Giám Sát Ghế Live (Redis)</span>
+            <span className="text-[10px] text-ink-400 font-mono font-normal">
               {allVaultCreds.length} tài khoản • {totalActiveLeases} phiên đang hoạt động
             </span>
           </h3>
 
           {allVaultCreds.length === 0 ? (
-            <div className="p-6 rounded-xl bg-slate-900/40 border border-slate-800 text-center text-slate-400 text-xs">
+            <div className="p-6 rounded-xl bg-cream-50 border border-cream-200 text-center text-ink-500 text-xs">
               Chưa có tài khoản nào được lưu trữ trong Vault. Thêm tài khoản dùng chung ở biểu mẫu phía trên.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[11px]">
+            <div className="overflow-x-auto card-cream border border-cream-200">
+              <table className="w-full text-left text-xs text-ink-700">
+                <thead className="bg-cream-100/90 text-ink-600 border-b border-cream-200 uppercase font-mono text-[11px]">
                   <tr>
                     <th className="py-3 px-4">Dịch vụ AI</th>
                     <th className="py-3 px-4">Tài khoản dùng chung</th>
@@ -956,62 +945,62 @@ export default async function AdminPortalPage() {
                     <th className="py-3 px-4 text-right">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-sans">
+                <tbody className="divide-y divide-cream-200/80 font-sans">
                   {allVaultCreds.map((cred) => {
                     const isAtCapacity = cred.activeCount >= cred.maxConcurrency;
                     return (
-                      <tr key={cred.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-white">
+                      <tr key={cred.id} className="hover:bg-cream-50/60 transition-colors">
+                        <td className="py-3.5 px-4 font-semibold text-ink-900">
                           {cred.resourceName}
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-300">
+                        <td className="py-3.5 px-4 font-mono text-ink-600">
                           {cred.accountEmail}
                         </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                            <Lock className="w-2.5 h-2.5" />
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-mint-50 text-mint-800 border border-mint-200">
+                            <Lock className="w-2.5 h-2.5 text-mint-600" />
                             AES-256-GCM
                           </span>
                         </td>
-                        <td className="py-3 px-4 w-44">
+                        <td className="py-3.5 px-4 w-44">
                           <div className="space-y-1">
                             <div className="flex justify-between text-[10px] font-mono">
-                              <span className={isAtCapacity ? "text-rose-400 font-bold" : "text-emerald-400"}>
+                              <span className={isAtCapacity ? "text-rose-600 font-bold" : "text-mint-700 font-semibold"}>
                                 {cred.activeCount} / {cred.maxConcurrency} slots
                               </span>
-                              <span className="text-slate-500">
+                              <span className="text-ink-400">
                                 {isAtCapacity ? "HẾT GHẾ" : "CÒN CHỖ"}
                               </span>
                             </div>
-                            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                            <div className="w-full h-1.5 rounded-full bg-cream-200 overflow-hidden">
                               <div
                                 className={`h-full transition-all duration-300 ${
-                                  isAtCapacity ? "bg-rose-500" : cred.activeCount > 0 ? "bg-amber-500" : "bg-emerald-500"
+                                  isAtCapacity ? "bg-rose-500" : cred.activeCount > 0 ? "bg-amber-400" : "bg-mint-500"
                                 }`}
                                 style={{ width: `${Math.min(100, (cred.activeCount / cred.maxConcurrency) * 100)}%` }}
                               />
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3.5 px-4">
                           {cred.status === "ACTIVE" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              <CheckCircle2 className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-mint-50 text-mint-800 border border-mint-200">
+                              <CheckCircle2 className="w-3 h-3 text-mint-600" />
                               ACTIVE
                             </span>
                           ) : cred.status === "ROTATING" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                              <RefreshCw className="w-3 h-3 text-amber-400 animate-spin" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              <RefreshCw className="w-3 h-3 text-amber-600 animate-spin" />
                               ROTATING
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-300 border border-rose-500/30">
-                              <XCircle className="w-3 h-3 text-rose-400" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                              <XCircle className="w-3 h-3 text-rose-600" />
                               SUSPENDED
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-slate-400 text-[11px]">
+                        <td className="py-3.5 px-4 text-ink-500 text-[11px]">
                           {cred.lastRotatedAt
                             ? new Date(cred.lastRotatedAt).toLocaleDateString("vi-VN", {
                                 day: "2-digit",
@@ -1020,7 +1009,7 @@ export default async function AdminPortalPage() {
                               })
                             : "Ban đầu"}
                         </td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right">
                           <form action={handleUpdateVaultStatus} className="inline-block">
                             <input type="hidden" name="credentialId" value={cred.id} />
                             {cred.status === "ACTIVE" ? (
@@ -1030,10 +1019,10 @@ export default async function AdminPortalPage() {
                             )}
                             <button
                               type="submit"
-                              className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors border ${
                                 cred.status === "ACTIVE"
-                                  ? "bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700"
-                                  : "bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30"
+                                  ? "bg-white hover:bg-rose-50 text-rose-700 border-rose-200"
+                                  : "bg-mint-50 hover:bg-mint-100 text-mint-800 border-mint-200"
                               }`}
                             >
                               {cred.status === "ACTIVE" ? "Tạm dừng" : "Kích hoạt"}
@@ -1050,21 +1039,21 @@ export default async function AdminPortalPage() {
         </div>
       </div>
 
-      {/* Form: Issue New AI Grant */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+      {/* ==================== SECTION: ISSUE NEW GRANT ==================== */}
+      <div className="card-cream p-6 sm:p-8 bg-white space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+          <div className="w-9 h-9 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center border border-mint-200">
             <PlusCircle className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Cấp Quyền Dịch Vụ AI Mới (Issue AI Grant)</h2>
-            <p className="text-xs text-slate-400">Chọn nhân viên từ danh bạ và chỉ định tài nguyên AI được phép truy cập</p>
+            <h2 className="text-lg font-bold text-ink-900">Cấp Quyền Dịch Vụ AI Mới (Issue AI Grant)</h2>
+            <p className="text-xs text-ink-500">Chọn nhân viên từ danh bạ và chỉ định tài nguyên AI được phép truy cập</p>
           </div>
         </div>
 
         {allEmployees.length === 0 ? (
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs flex items-center gap-3">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
               Chưa có nhân viên nào trong cơ sở dữ liệu. Hãy yêu cầu nhân viên đăng nhập bằng Google OAuth trước để xuất hiện trong danh sách này.
             </span>
@@ -1072,14 +1061,14 @@ export default async function AdminPortalPage() {
         ) : (
           <form action={handleCreateGrant} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label htmlFor="employeeId" className="block text-xs font-semibold text-slate-300">
+              <label htmlFor="employeeId" className="block text-xs font-semibold text-ink-700">
                 Nhân viên nhận quyền
               </label>
               <select
                 id="employeeId"
                 name="employeeId"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-ink-900 text-xs focus:outline-none focus:border-mint-500 transition-colors"
               >
                 <option value="">-- Chọn nhân viên --</option>
                 {allEmployees.map((emp) => (
@@ -1091,14 +1080,14 @@ export default async function AdminPortalPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="resourceName" className="block text-xs font-semibold text-slate-300">
+              <label htmlFor="resourceName" className="block text-xs font-semibold text-ink-700">
                 Dịch vụ AI được cấp
               </label>
               <select
                 id="resourceName"
                 name="resourceName"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-ink-900 text-xs focus:outline-none focus:border-mint-500 transition-colors"
               >
                 <option value="ChatGPT Team">ChatGPT Team (OpenAI)</option>
                 <option value="Claude 3.5 Sonnet Pro">Claude 3.5 Sonnet Pro (Anthropic)</option>
@@ -1110,14 +1099,14 @@ export default async function AdminPortalPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="expiresDays" className="block text-xs font-semibold text-slate-300">
+              <label htmlFor="expiresDays" className="block text-xs font-semibold text-ink-700">
                 Thời hạn hiệu lực
               </label>
               <div className="flex gap-2">
                 <select
                   id="expiresDays"
                   name="expiresDays"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-ink-900 text-xs focus:outline-none focus:border-mint-500 transition-colors"
                 >
                   <option value="0">Vô thời hạn (Không hết hạn)</option>
                   <option value="7">7 ngày</option>
@@ -1128,10 +1117,10 @@ export default async function AdminPortalPage() {
 
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] shrink-0"
+                  className="px-5 py-2.5 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-mint active:scale-[0.98] shrink-0"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  Cấp Quyền
+                  <span>Cấp Quyền</span>
                 </button>
               </div>
             </div>
@@ -1139,31 +1128,31 @@ export default async function AdminPortalPage() {
         )}
       </div>
 
-      {/* Table: All Issued Grants */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+      {/* ==================== SECTION: ALL GRANTS ==================== */}
+      <div className="card-cream p-6 sm:p-8 bg-white space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+            <div className="w-9 h-9 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center border border-mint-200">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Danh Sách Quyền Truy Cập AI (Grants Management)</h2>
-              <p className="text-xs text-slate-400">Xem trạng thái và thực hiện thu hồi quyền tức thì</p>
+              <h2 className="text-lg font-bold text-ink-900">Danh Sách Quyền Truy Cập AI (Grants Management)</h2>
+              <p className="text-xs text-ink-500">Xem trạng thái và thực hiện thu hồi quyền tức thì</p>
             </div>
           </div>
-          <span className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+          <span className="text-xs font-mono text-ink-600 bg-cream-100 px-3 py-1 rounded-lg border border-cream-200">
             Tổng: {allGrantsList.length} bản ghi
           </span>
         </div>
 
         {allGrantsList.length === 0 ? (
-          <div className="p-8 text-center rounded-xl bg-slate-900/40 border border-slate-800/80 text-slate-400 text-sm">
+          <div className="p-8 text-center rounded-xl bg-cream-50 border border-cream-200 text-ink-500 text-sm">
             Chưa có quyền AI nào được cấp. Hãy sử dụng biểu mẫu phía trên để cấp quyền cho nhân viên.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[11px]">
+          <div className="overflow-x-auto card-cream border border-cream-200">
+            <table className="w-full text-left text-xs text-ink-700">
+              <thead className="bg-cream-100/90 text-ink-600 border-b border-cream-200 uppercase font-mono text-[11px]">
                 <tr>
                   <th className="py-3 px-4">Dịch vụ AI</th>
                   <th className="py-3 px-4">Nhân viên được cấp</th>
@@ -1175,17 +1164,17 @@ export default async function AdminPortalPage() {
                   <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-sans">
+              <tbody className="divide-y divide-cream-200/80 font-sans">
                 {allGrantsList.map((grant) => {
                   const isActive = grant.status === "ACTIVE";
                   return (
-                    <tr key={grant.id} className="hover:bg-slate-800/30 transition-colors">
+                    <tr key={grant.id} className="hover:bg-cream-50/60 transition-colors">
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-100 flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                        <div className="font-semibold text-ink-900 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-mint-500" />
                           {grant.resourceName}
                         </div>
-                        <span className="text-[10px] font-mono text-slate-500">ID: {grant.id.slice(0, 8)}...</span>
+                        <span className="text-[10px] font-mono text-ink-400">ID: {grant.id.slice(0, 8)}...</span>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -1194,57 +1183,57 @@ export default async function AdminPortalPage() {
                             <img
                               src={grant.employeeAvatar}
                               alt=""
-                              className="w-6 h-6 rounded-full object-cover ring-1 ring-slate-700"
+                              className="w-6 h-6 rounded-full object-cover ring-1 ring-cream-300"
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] text-slate-300 font-bold">
+                            <div className="w-6 h-6 rounded-full bg-cream-200 flex items-center justify-center text-[10px] text-ink-700 font-bold">
                               {(grant.employeeName || grant.employeeEmail || "U")[0].toUpperCase()}
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-slate-200">{grant.employeeName || "Chưa có tên"}</p>
-                            <p className="text-[11px] text-slate-400 font-mono">{grant.employeeEmail || grant.employeeId}</p>
+                            <p className="font-semibold text-ink-800">{grant.employeeName || "Chưa có tên"}</p>
+                            <p className="text-[11px] text-ink-400 font-mono">{grant.employeeEmail || grant.employeeId}</p>
                           </div>
                         </div>
                       </td>
 
                       <td className="py-3.5 px-4">
                         {isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-mint-50 text-mint-800 border border-mint-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-mint-500 animate-pulse" />
                             ACTIVE
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
-                            <XCircle className="w-3 h-3 text-slate-500" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                            <XCircle className="w-3 h-3 text-rose-500" />
                             REVOKED
                           </span>
                         )}
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-mono text-xs font-semibold bg-slate-800/80 text-amber-300 border border-slate-700">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-mono text-xs font-semibold bg-cream-100 text-ink-800 border border-cream-200">
                           {grant.accessCount || 0}
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                      <td className="py-3.5 px-4 font-mono text-ink-500 text-[11px]">
                         {grant.lastAccessedAt ? (
                           new Date(grant.lastAccessedAt).toLocaleString("vi-VN")
                         ) : (
-                          <span className="text-slate-500">Chưa dùng</span>
+                          <span className="text-ink-400">Chưa dùng</span>
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono text-slate-400">
+                      <td className="py-3.5 px-4 font-mono text-ink-500">
                         {grant.createdAt ? new Date(grant.createdAt).toLocaleDateString("vi-VN") : "N/A"}
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono text-slate-400">
+                      <td className="py-3.5 px-4 font-mono text-ink-500">
                         {grant.expiresAt ? (
                           new Date(grant.expiresAt).toLocaleDateString("vi-VN")
                         ) : (
-                          <span className="text-slate-500">Vô thời hạn</span>
+                          <span className="text-ink-400">Vô thời hạn</span>
                         )}
                       </td>
 
@@ -1254,13 +1243,13 @@ export default async function AdminPortalPage() {
                             <input type="hidden" name="grantId" value={grant.id} />
                             <button
                               type="submit"
-                              className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition-colors"
+                              className="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold transition-colors shadow-sm"
                             >
-                              Thu hồi (Revoke)
+                              Thu hồi
                             </button>
                           </form>
                         ) : (
-                          <span className="text-[11px] text-slate-500 italic">Đã thu hồi</span>
+                          <span className="text-[11px] text-ink-400 italic">Đã thu hồi</span>
                         )}
                       </td>
                     </tr>
@@ -1272,26 +1261,26 @@ export default async function AdminPortalPage() {
         )}
       </div>
 
-      {/* Directory of Employees */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
+      {/* ==================== SECTION: EMPLOYEE DIRECTORY ==================== */}
+      <div className="card-cream p-6 sm:p-8 bg-white space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+            <div className="w-9 h-9 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center border border-mint-200">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Danh Bạ Nhân Viên (Registered Employees)</h2>
-              <p className="text-xs text-slate-400">Bảng định danh người dùng từ Google OAuth 2.0 đồng bộ với PostgreSQL</p>
+              <h2 className="text-lg font-bold text-ink-900">Danh Bạ Nhân Viên (Registered Employees)</h2>
+              <p className="text-xs text-ink-500">Bảng định danh người dùng từ Google OAuth 2.0 đồng bộ với PostgreSQL</p>
             </div>
           </div>
-          <span className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+          <span className="text-xs font-mono text-ink-600 bg-cream-100 px-3 py-1 rounded-lg border border-cream-200">
             {allEmployees.length} nhân viên
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800 uppercase font-mono text-[11px]">
+        <div className="overflow-x-auto card-cream border border-cream-200">
+          <table className="w-full text-left text-xs text-ink-700">
+            <thead className="bg-cream-100/90 text-ink-600 border-b border-cream-200 uppercase font-mono text-[11px]">
               <tr>
                 <th className="py-3 px-4">Nhân viên</th>
                 <th className="py-3 px-4">Phòng ban</th>
@@ -1301,71 +1290,71 @@ export default async function AdminPortalPage() {
                 <th className="py-3 px-4">Ngày tham gia</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-sans">
+            <tbody className="divide-y divide-cream-200/80 font-sans">
               {allEmployees.map((emp) => {
                 const empDept = allDepartments.find((d) => d.id === emp.departmentId);
                 return (
-                  <tr key={emp.id} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={emp.id} className="hover:bg-cream-50/60 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
                         {emp.avatarUrl ? (
                           <img
                             src={emp.avatarUrl}
                             alt=""
-                            className="w-7 h-7 rounded-full object-cover ring-1 ring-slate-700"
+                            className="w-7 h-7 rounded-full object-cover ring-1 ring-cream-300"
                           />
                         ) : (
-                          <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs text-slate-300 font-bold">
+                          <div className="w-7 h-7 rounded-full bg-cream-200 flex items-center justify-center text-xs text-ink-700 font-bold">
                             {(emp.name || emp.email || "U")[0].toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <p className="font-semibold text-slate-100">{emp.name || "Chưa có tên"}</p>
-                          <p className="text-[11px] text-slate-400 font-mono">{emp.email}</p>
+                          <p className="font-semibold text-ink-900">{emp.name || "Chưa có tên"}</p>
+                          <p className="text-[11px] text-ink-400 font-mono">{emp.email}</p>
                         </div>
                       </div>
                     </td>
 
                     <td className="py-3.5 px-4">
                       {empDept ? (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
-                          <Building2 className="w-3 h-3 text-cyan-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-mint-50 text-mint-800 border border-mint-200">
+                          <Building2 className="w-3 h-3 text-mint-600" />
                           {empDept.name} ({empDept.code})
                         </span>
                       ) : (
-                        <span className="text-[11px] text-slate-500 italic">Chưa phân bổ</span>
+                        <span className="text-[11px] text-ink-400 italic">Chưa phân bổ</span>
                       )}
                     </td>
 
-                  <td className="py-3.5 px-4">
-                    {emp.role === "ROOT_ADMIN" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                        <ShieldAlert className="w-3 h-3 text-amber-400" />
-                        ROOT_ADMIN
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
-                        <UserCheck className="w-3 h-3 text-slate-400" />
-                        EMPLOYEE
-                      </span>
-                    )}
-                  </td>
+                    <td className="py-3.5 px-4">
+                      {emp.role === "ROOT_ADMIN" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          <ShieldAlert className="w-3 h-3 text-amber-600" />
+                          ROOT_ADMIN
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-cream-100 text-ink-700 border border-cream-200">
+                          <UserCheck className="w-3 h-3 text-mint-600" />
+                          EMPLOYEE
+                        </span>
+                      )}
+                    </td>
 
-                  <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400 select-all">
-                    {emp.googleSub}
-                  </td>
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-ink-500 select-all">
+                      {emp.googleSub}
+                    </td>
 
-                  <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400 select-all">
-                    {emp.id}
-                  </td>
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-ink-500 select-all">
+                      {emp.id}
+                    </td>
 
-                  <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
-                    {emp.createdAt ? new Date(emp.createdAt).toLocaleString("vi-VN") : "N/A"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-ink-500">
+                      {emp.createdAt ? new Date(emp.createdAt).toLocaleString("vi-VN") : "N/A"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
           </table>
         </div>
       </div>
