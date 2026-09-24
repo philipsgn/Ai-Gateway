@@ -103,10 +103,12 @@ npx tsc --noEmit
 @enterprise-ai/web:build: ƒ  (Dynamic)  server-rendered on demand
 @enterprise-ai/web:build: 
 
- Tasks:    1 successful, 1 total
-Cached:    0 cached, 1 total
-  Time:    54.961s 
-```
+### 2.4 Kiểm Tra Khắc Phục Lỗi Runtime Production (Vercel MissingSecret & Session Null-Safety)
+- **Hiện tượng lỗi:** Server Vercel gặp `MissingSecret: Please define a secret` và `TypeError: Cannot read properties of undefined (reading 'name')` khi `AUTH_SECRET` chưa được nạp đầy đủ trong Environment Variables của Vercel hoặc session cookie không hợp lệ.
+- **Giải pháp xử lý:**
+  1. Trong [auth.ts](file:///c:/Users/TanPhat/Documents/test-baha/apps/web/src/auth.ts): Tự động nạp fallback `process.env.AUTH_SECRET` từ `process.env.NEXTAUTH_SECRET` hoặc fallback secret, bảo đảm Auth.js v5 không bao giờ ném ngoại lệ dừng tiến trình.
+  2. Trong [page.tsx](file:///c:/Users/TanPhat/Documents/test-baha/apps/web/src/app/page.tsx): Chuyển điều kiện kiểm tra phiên từ `!session` sang `!session?.user`, và bổ sung optional chaining `session?.user?.name`, `session?.user?.email` cho tất cả các điểm render.
+  3. Kiểm tra build lại toàn dự án bằng `npx turbo build`: Thành công 100% (28.9s).
 
 ---
 
