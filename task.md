@@ -1,34 +1,49 @@
-# Task Tracking: Phase 5 — Enterprise Compliance & WORM Audit Analytics
+# Task Tracking: Phase 6 — Enterprise Production Transformation & Mint-Cream UI/UX Overhaul
 
-Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 5, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
+Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 6, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
 
 ---
 
-## Nhóm 1: Cơ Sở Dữ Liệu WORM & Checksum Bất Biến (Data & WORM Policy)
-- [x] Mở rộng bảng `audit_logs` thêm cột `checksum VARCHAR(64)` trong `apps/web/src/db/schema.ts`
-- [x] Cập nhật migration script `scripts/migrate.ts`: Thêm cột `checksum`, tạo trigger `trg_audit_logs_immutable` chặn `UPDATE/DELETE`
-- [x] Thực thi `npm run db:migrate` áp dụng WORM trigger lên Neon PostgreSQL thật
-- [x] Xây dựng module kiểm toán `apps/web/src/lib/audit.ts` hỗ trợ tính checksum SHA-256 và hàm xác thực toàn vẹn `verifyAuditIntegrity`
+## Nhóm 1: Hệ Thống Design Tokens & Theme Engine Mint & Cream
+- [x] Tinh chỉnh `apps/web/tailwind.config.js` bổ sung bảng màu mint-cream chuẩn cao cấp (`cream`, `mint`, `ink`)
+- [x] Cập nhật `apps/web/src/app/globals.css` định nghĩa các utility classes: `bg-cream-canvas`, `card-cream`, `badge-mint`, `btn-mint-primary`, `btn-cream-secondary`
 
-## Nhóm 2: API Xuất Báo Cáo Tuân Thủ Chuẩn Doanh Nghiệp (Compliance Export Engine)
-- [x] Xây dựng Route Handler `/api/audit/export/route.ts` hỗ trợ định dạng `?format=csv` (RFC 4180)
-- [x] Bổ sung hỗ trợ định dạng `?format=json` (Gói chứng thực ISO 27001 / SOC 2 Compliance Package)
-- [x] Kiểm tra xác thực phân quyền an toàn khi xuất báo cáo
+## Nhóm 2: Cổng Điều Hướng Chung & Dọn Dẹp Prototype (Navigation & Clean Layout)
+- [ ] Nâng cấp thanh điều hướng chính `apps/web/src/components/Navbar.tsx` (hoặc header layout):
+  - Brand Logo cao cấp "AI Access Gateway • Enterprise Portal" với icon xanh ngọt và kem sang trọng
+  - Trạng thái hệ thống doanh nghiệp (Enterprise SLA Indicator) thay vì hiển thị tên driver DB
+  - Dropdown/Avatar người dùng tinh gọn, liên kết nhanh giữa Cổng Nhân Viên, Quản Trị và Tuân Thủ
+- [ ] Xóa bỏ hoàn toàn khung hiển thị bảng DB `CHI TIẾT BẢN GHI POSTGRESQL` và các banner kỹ thuật
 
-## Nhóm 3: Bảng Phân Tích ROI & Trực Quan Hóa Tuân Thủ Tại /audit (Compliance Dashboard)
-- [x] Nâng cấp giao diện `/audit`:
-  - [x] Thẻ chứng nhận WORM Immutability & Checksum Status
-  - [x] Thẻ phân tích ROI (Giờ làm việc tiết kiệm, giá trị kinh tế tạo ra)
-  - [x] Biểu đồ phân bổ tỷ lệ các loại sự kiện (Event Distribution)
-  - [x] Bộ lọc sự kiện theo phân loại (Category Filter)
-  - [x] Nút bấm xuất nhanh CSV và JSON Compliance Package
+## Nhóm 3: Không Gian Làm Việc Nhân Viên & Danh Mục Self-Service (`apps/web/src/app/page.tsx`)
+- [ ] Xây dựng lại Hero Header Nhân Viên: Tên, avatar, vai trò (`EMPLOYEE` / `ROOT_ADMIN`), phòng ban và chỉ số tóm tắt (Công cụ hoạt động, phiên đang giữ)
+- [ ] Xây dựng khu vực "Không Gian Làm Việc AI Của Bạn" (Active AI Workspace):
+  - Thẻ dịch vụ AI thiết kế Mint & Cream với biểu tượng thương hiệu sắc nét
+  - Hiển thị tình trạng ghế dùng chung thời gian thực từ Redis (`X/Y slots`)
+  - Nút khởi chạy qua Gateway với animation mượt mà
+  - Nút "Trả slot (Release)" khi nhân viên đang giữ ghế
+- [ ] Xây dựng khu vực "Danh Mục Công Cụ Doanh Nghiệp & Yêu Cầu Cấp Quyền" (AI Catalog & Access Request):
+  - Hiển thị các công cụ khả dụng trong công ty
+  - Thêm Server Action `handleRequestAccess`: Cho phép nhân viên bấm "Yêu cầu cấp quyền", tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs` có ký SHA-256
 
-## Nhóm 4: Tích Hợp Kiểm Toán & Báo Cáo Tại Admin Portal (/admin)
-- [x] Bổ sung liên kết xuất báo cáo tuân thủ nhanh trên header Admin Portal
-- [x] Cập nhật module Launch Gateway và các Server Actions để ghi `checksum` SHA-256 cho mọi bản ghi audit mới
+## Nhóm 4: Cổng Quản Trị Doanh Nghiệp Tinh Hoa (`apps/web/src/app/admin/page.tsx`)
+- [ ] Chuyển đổi toàn bộ giao diện Cổng Quản Trị sang hệ thiết kế Mint & Cream:
+  - Bảng tổng quan KPI với thẻ số liệu tương phản cao, đổ bóng nhẹ
+  - Tab Quản lý Ngân sách phòng ban & Hạn mức chi tiêu
+  - Tab Kho Mật Mã Bản Quyền Dùng Chung (Shared Vault): Thẻ tài khoản mã hóa AES-256-GCM, số ghế trực tiếp từ Redis, nút xoay vòng mật khẩu và tạm dừng/kích hoạt
+  - Tab Ma Trận Phân Quyền Nhân Sự: Tìm kiếm, cấp mới quyền AI với thời hạn, thu hồi tức thì
+  - Nút xuất nhanh báo cáo tuân thủ CSV
 
-## Nhóm 5: Kiểm Chứng & Nghiệm Thu Toàn Diện (Verification)
-- [x] Chạy `git grep -i "Mock" apps/web/src/` đảm bảo 0 kết quả
-- [x] Viết và chạy script xác thực `scripts/test-phase5-compliance.ts` chứng minh WORM trigger chặn lệnh sửa/xóa và verify toàn vẹn checksum trên Neon PostgreSQL
-- [x] Chạy `npx turbo build` kiểm tra type-safety và build production
-- [x] Tạo báo cáo nghiệm thu `docs/reports/PHASE-5-IMPLEMENTATION-REPORT.md`
+## Nhóm 5: Trung Tâm Tuân Thủ & Phân Tích ROI (`apps/web/src/app/audit/page.tsx`)
+- [ ] Tái thiết kế trang Kiểm toán Tuân thủ:
+  - Chứng nhận WORM Immutability với thiết kế trang trọng, chuẩn mực
+  - Thước đo toàn vẹn Checksum SHA-256 (100% Verified)
+  - Thẻ tính toán ROI doanh nghiệp (Thời gian tiết kiệm, giá trị kinh tế)
+  - Thanh phân bổ sự kiện màu pastel và bộ lọc sự kiện trực quan
+  - Nút xuất CSV (RFC 4180) và ISO 27001 / SOC 2 JSON
+
+## Nhóm 6: Kiểm Chứng Toàn Diện & Nghiệm Thu
+- [ ] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`
+- [ ] Kiểm tra TypeScript compilation: `npx tsc --noEmit`
+- [ ] Chạy `npx turbo build` đảm bảo mã thoát 0
+- [ ] Lập báo cáo nghiệm thu `docs/reports/PHASE-6-IMPLEMENTATION-REPORT.md`
