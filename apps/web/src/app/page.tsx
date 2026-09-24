@@ -70,7 +70,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     revalidatePath("/admin");
   }
 
-  // Server Action: Handles 1-click self-service access request
+  // Server Action: Handles 1-click self-service access request (or instant grant for ROOT_ADMIN)
   async function handleRequestAccess(formData: FormData) {
     "use server";
     const currentSession = await auth();
@@ -79,6 +79,48 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     const resourceName = (formData.get("resourceName") as string)?.trim();
     if (!resourceName) return;
 
+    const rootAdminEmail = process.env.ROOT_ADMIN_EMAIL?.toLowerCase().trim();
+    const isRootAdmin = !!(rootAdminEmail && currentSession.user.email.toLowerCase().trim() === rootAdminEmail);
+
+    if (isRootAdmin) {
+      // Find employee record
+      const [emp] = await db
+        .select()
+        .from(employees)
+        .where(eq(employees.email, currentSession.user.email.toLowerCase().trim()))
+        .limit(1);
+
+      if (emp) {
+        // Direct instant grant for ROOT_ADMIN
+        await db
+          .insert(grants)
+          .values({
+            employeeId: emp.id,
+            resourceName,
+            grantedBy: "ROOT_ADMIN_SELF",
+            status: "ACTIVE",
+          })
+          .onConflictDoNothing();
+
+        await logAuditEvent({
+          actorId: emp.id,
+          action: "GRANT_ISSUED",
+          targetId: emp.id,
+          metadata: {
+            resourceName,
+            grantedBy: currentSession.user.email,
+            mode: "SELF_ASSIGNED_ROOT_ADMIN",
+            assignedAt: new Date().toISOString(),
+          },
+        });
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        redirect(`/?success=grant_activated&tool=${encodeURIComponent(resourceName)}`);
+      }
+    }
+
+    // Normal employee: Request review
     await logAuditEvent({
       actorId: currentSession.user.id || currentSession.user.email,
       action: "ACCESS_REQUESTED",
@@ -221,6 +263,30 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {/* --------------------------------------------------------------------- */}
       {/* Notifications & Action Feedback Banners                               */}
       {/* --------------------------------------------------------------------- */}
+      {searchParams.success === "grant_activated" && (
+        <div className="p-4 rounded-2xl bg-mint-50 border border-mint-200 text-mint-900 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-mint-500 text-white flex items-center justify-center shrink-0 shadow-mint">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-xs sm:text-sm text-mint-900">
+                Đã kích hoạt quyền thành công!
+              </p>
+              <p className="text-xs text-mint-700 mt-0.5">
+                Công cụ <strong>{searchParams.tool || "AI Tool"}</strong> đã được tự động thêm vào danh sách công cụ được cấp quyền của bạn (Quyền Quản Trị Viên).
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/"
+            className="text-xs text-mint-700 hover:text-mint-900 font-medium underline underline-offset-2 shrink-0 ml-2"
+          >
+            Đóng
+          </Link>
+        </div>
+      )}
+
       {searchParams.success === "request_submitted" && (
         <div className="p-4 rounded-2xl bg-mint-50 border border-mint-200 text-mint-900 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
@@ -522,10 +588,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <div>
                 <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
                   <Compass className="w-5 h-5 text-mint-600" />
-                  Công Cụ Sẵn Sàng Làm Việc
+                  Công Cụ Được Cấp Quyền Của Bạn
                 </h2>
                 <p className="text-xs text-ink-500 mt-0.5">
-                  Chọn công cụ bạn muốn sử dụng để bắt đầu làm việc.
+                  Danh sách công cụ AI bạn được phân quyền. Công cụ gắn nhãn SẴN SÀNG đã kết nối tài khoản bản quyền, nhãn CHỜ KẾT NỐI đang chờ nạp tài khoản vào Kho Mật Mã.
                 </p>
               </div>
               <span className="text-xs font-mono text-mint-800 bg-mint-50 px-3 py-1 rounded-full border border-mint-200 font-semibold">
@@ -692,7 +758,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   Danh Mục Công Cụ AI Khả Dụng
                 </h2>
                 <p className="text-xs text-ink-500 mt-0.5">
-                  Bạn có thể bấm "Yêu Cầu Cấp Quyền" đối với các công cụ phục vụ công việc của mình.
+                  {dbEmployee?.role === "ROOT_ADMIN"
+                    ? "Với vai trò Quản Trị Viên, bạn có thể tự kích hoạt quyền ngay lập tức cho mình hoặc vào Cổng Quản Trị để phân bổ cho toàn công ty."
+                    : "Bạn có thể bấm \"Yêu Cầu Cấp Quyền\" đối với các công cụ phục vụ công việc của mình."}
                 </p>
               </div>
 
@@ -715,13 +783,24 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                     <form action={handleRequestAccess} className="pt-2">
                       <input type="hidden" name="resourceName" value={tool.name} />
-                      <button
-                        type="submit"
-                        className="w-full py-2 px-3 rounded-xl bg-white hover:bg-cream-100 text-mint-800 text-xs font-semibold border border-mint-300 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
-                      >
-                        <Send className="w-3.5 h-3.5 text-mint-600" />
-                        <span>Yêu Cầu Cấp Quyền</span>
-                      </button>
+                      {dbEmployee?.role === "ROOT_ADMIN" ? (
+                        <button
+                          type="submit"
+                          className="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold border border-amber-300 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+                          title="Tự động cấp quyền sử dụng cho tài khoản Quản trị viên"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                          <span>Kích Hoạt Cho Tôi</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="submit"
+                          className="w-full py-2 px-3 rounded-xl bg-white hover:bg-cream-100 text-mint-800 text-xs font-semibold border border-mint-300 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+                        >
+                          <Send className="w-3.5 h-3.5 text-mint-600" />
+                          <span>Yêu Cầu Cấp Quyền</span>
+                        </button>
+                      )}
                     </form>
                   </div>
                 ))}
