@@ -9,11 +9,11 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 6, bám sát 100% phâ
 - [x] Cập nhật `apps/web/src/app/globals.css` định nghĩa các utility classes: `bg-cream-canvas`, `card-cream`, `badge-mint`, `btn-mint-primary`, `btn-cream-secondary`
 
 ## Nhóm 2: Cổng Điều Hướng Chung & Dọn Dẹp Prototype (Navigation & Clean Layout)
-- [ ] Nâng cấp thanh điều hướng chính `apps/web/src/components/Navbar.tsx` (hoặc header layout):
-  - Brand Logo cao cấp "AI Access Gateway • Enterprise Portal" với icon xanh ngọt và kem sang trọng
-  - Trạng thái hệ thống doanh nghiệp (Enterprise SLA Indicator) thay vì hiển thị tên driver DB
-  - Dropdown/Avatar người dùng tinh gọn, liên kết nhanh giữa Cổng Nhân Viên, Quản Trị và Tuân Thủ
-- [ ] Xóa bỏ hoàn toàn khung hiển thị bảng DB `CHI TIẾT BẢN GHI POSTGRESQL` và các banner kỹ thuật
+- [x] Nâng cấp thanh điều hướng chính `apps/web/src/components/Navbar.tsx` (hoặc header layout):
+  - [x] Brand Logo cao cấp "AI Access Gateway • Enterprise Portal" với icon xanh ngọt và kem sang trọng
+  - [x] Trạng thái hệ thống doanh nghiệp (Enterprise SLA Indicator) thay vì hiển thị tên driver DB
+  - [x] Dropdown/Avatar người dùng tinh gọn, liên kết nhanh giữa Cổng Nhân Viên, Quản Trị và Tuân Thủ
+- [x] Xóa bỏ hoàn toàn khung hiển thị bảng DB `CHI TIẾT BẢN GHI POSTGRESQL` và các banner kỹ thuật
 
 ## Nhóm 3: Không Gian Làm Việc Nhân Viên & Danh Mục Self-Service (`apps/web/src/app/page.tsx`)
 - [ ] Xây dựng lại Hero Header Nhân Viên: Tên, avatar, vai trò (`EMPLOYEE` / `ROOT_ADMIN`), phòng ban và chỉ số tóm tắt (Công cụ hoạt động, phiên đang giữ)
