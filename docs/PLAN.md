@@ -27,6 +27,7 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 | **4** | **Shared Credential Vault & Dynamic Session Broker**<br/>*Quản trị tài khoản AI bản quyền dùng chung an toàn: Tích hợp kho bảo mật xoay vòng credential tự động, ủy quyền phiên làm việc mà không để lộ mật khẩu gốc cho nhân viên.* | ✅ **Hoàn thành** | Đã nghiệm thu mã hóa AES-256-GCM, quản lý Vault tại /admin, Concurrency Lease Mutex trên Upstash Redis và tính năng trả slot trên Employee Hub. |
 | **5** | **Enterprise Compliance & WORM Audit Analytics**<br/>*Báo cáo tuân thủ cấp doanh nghiệp: Xuất báo cáo kiểm toán phục vụ chứng chỉ ISO 27001 / SOC 2, biểu đồ trực quan hóa tần suất và hiệu quả sử dụng AI toàn công ty.* | ✅ **Hoàn thành** | Đã nghiệm thu trigger WORM chặn sửa/xóa trên PostgreSQL, băm mật mã học SHA-256, API xuất báo cáo CSV/JSON và giao diện ROI tại /audit. |
 | **6** | **Enterprise Production Transformation & Mint-Cream UI/UX Overhaul**<br/>*Chuyển đổi toàn diện sản phẩm thành bản Production thương mại: Áp dụng hệ thiết kế Mint & Cream cao cấp, loại bỏ hoàn toàn các khung debug/sandbox, hoàn thiện trải nghiệm yêu cầu cấp quyền và tối ưu luồng người dùng.* | ✅ **Hoàn thành** | Đã nghiệm thu hệ thiết kế Mint & Cream, xóa bỏ debug panel, build thành công và xuất báo cáo nghiệm thu Phase 6. |
+| **7** | **Human-Centric UI/UX Simplification & Interactive Platform Guide**<br/>*Tối giản hóa toàn diện ngôn ngữ và giao diện: Chuyển toàn bộ thuật ngữ chuyên ngành rườm rà vào trang "Hệ Thống Nền Tảng" riêng biệt; tinh gọn các trang chính theo phong cách tông màu trầm dịu nhẹ, chuẩn Production dễ dùng cho mọi nhân viên.* | ✅ **Hoàn thành** | Đã nghiệm thu trang /he-thong, loại bỏ thuật ngữ hardcore, tối ưu màu trầm dịu mắt và build thành công. |
 
 ---
 
@@ -63,6 +64,13 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 - **Cột mốc M6.2 (Clean Production Navigation & Layout):** Loại bỏ 100% bảng hiển thị debug PostgreSQL, câu lệnh SQL và thông báo kỹ thuật nội bộ khỏi giao diện người dùng.
 - **Cột mốc M6.3 (Employee Workspace & Self-Service Catalog):** Nâng cấp trang chủ `/` thành không gian làm việc AI danh giá với thẻ công cụ tương tác, chỉ số cá nhân, và tính năng "Yêu cầu cấp quyền (Request Access)" tự phục vụ khi chưa có quyền.
 - **Cột mốc M6.4 (Executive Admin Portal & Compliance Polish):** Tái thiết kế toàn bộ `/admin` và `/audit` theo chuẩn thẩm mỹ Senior Fullstack Developer, mang lại trải nghiệm SaaS thương mại đẳng cấp.
+
+### Phase 7: Human-Centric UI/UX Simplification & Interactive Platform Guide (✅ Hoàn thành)
+> *Báo cáo nghiệm thu chi tiết: Xem tại [docs/reports/PHASE-7-IMPLEMENTATION-REPORT.md](./reports/PHASE-7-IMPLEMENTATION-REPORT.md).*
+- **Cột mốc M7.1 (Subdued & Calming Minimalist Theme):** Tinh chỉnh bảng màu sang tông trầm nhẹ nhàng, dịu mắt (Muted Sage & Soft Warm Stone), không gây mỏi mắt, phong cách SaaS tối giản cao cấp.
+- **Cột mốc M7.2 (Dedicated Platform Guide Page `/he-thong`):** Xây dựng trang "Hệ Thống Nền Tảng" chuyên biệt, trực quan, giải thích toàn bộ cơ chế hoạt động, hướng dẫn nhân viên từng bước, cơ chế an toàn tài khoản dùng chung và mục FAQ dễ hiểu.
+- **Cột mốc M7.3 (Jargon-Free Core Pages):** Tinh gọn triệt để các trang chính (`/`, `/admin`, `/audit`), loại bỏ hoàn toàn các thuật ngữ mật mã/kỹ thuật rườm rà, thay bằng ngôn ngữ tự nhiên, thân thiện với mọi người dùng.
+- **Cột mốc M7.4 (Simplified Navigation & Activity Log):** Chuẩn hóa lại thanh điều hướng và chuyển đổi trang `/audit` thành "Nhật Ký Sử Dụng" minh bạch, trực quan.
 
 ---
 

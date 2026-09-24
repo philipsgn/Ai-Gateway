@@ -1,5 +1,4 @@
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -9,39 +8,32 @@ import { db, employees, grants, departments, vaultCredentials } from "@/db";
 import { eq, and, desc } from "drizzle-orm";
 import { checkLoginRateLimit } from "@/lib/redis";
 import { logAuditEvent } from "@/lib/audit";
+import { getResourceDetails, getAllResources, ResourceInfo } from "@/lib/catalog";
 import {
+  DepartmentBudgetSummary,
+  getDepartmentBudgetStats,
+} from "@/lib/budget";
+import { getActiveLeaseCount, getUserLease, releaseSessionLease } from "@/lib/session-broker";
+import {
+  Sparkles,
+  ExternalLink,
   ShieldCheck,
   ShieldAlert,
-  Lock,
-  ArrowRight,
-  LogOut,
-  CheckCircle,
-  FileText,
-  Activity,
-  User,
-  KeyRound,
-  Calendar,
-  AlertCircle,
-  Sparkles,
-  Zap,
-  ExternalLink,
-  Clock,
   Compass,
-  DollarSign,
+  AlertCircle,
   Building2,
-  TrendingUp,
-  Cpu,
+  DollarSign,
+  Lock,
+  LogOut,
   Send,
+  Zap,
   CheckCircle2,
-  Search,
+  ArrowRight,
   Layers,
-  HelpCircle,
+  BookOpen,
+  Users,
+  Clock,
 } from "lucide-react";
-import { getResourceDetails, getAllResources, RESOURCE_CATALOG, ResourceInfo } from "@/lib/catalog";
-import { getActiveLeaseCount, getUserLease, releaseSessionLease } from "@/lib/session-broker";
-import { getDepartmentBudgetStats, DepartmentBudgetSummary } from "@/lib/budget";
-
-export const dynamic = "force-dynamic";
 
 interface HomePageProps {
   searchParams: {
@@ -111,7 +103,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (session?.user?.email) {
     try {
       const email = session.user.email.toLowerCase().trim();
-      const userId = session.user.id;
 
       // 1. Query by email first
       const [existing] = await db
@@ -231,7 +222,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {/* Notifications & Action Feedback Banners                               */}
       {/* --------------------------------------------------------------------- */}
       {searchParams.success === "request_submitted" && (
-        <div className="p-4 rounded-2xl bg-mint-50 border border-mint-200 text-mint-900 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2">
+        <div className="p-4 rounded-2xl bg-mint-50 border border-mint-200 text-mint-900 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-mint-500 text-white flex items-center justify-center shrink-0 shadow-mint">
               <CheckCircle2 className="w-4 h-4" />
@@ -241,7 +232,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 Đã gửi yêu cầu cấp quyền thành công!
               </p>
               <p className="text-xs text-mint-700 mt-0.5">
-                Yêu cầu truy cập công cụ <strong>{searchParams.tool || "AI Tool"}</strong> đã được chuyển tới Quản trị viên (Root Admin) để phê duyệt.
+                Yêu cầu dùng công cụ <strong>{searchParams.tool || "AI Tool"}</strong> đã được chuyển tới Quản trị viên để phê duyệt.
               </p>
             </div>
           </div>
@@ -258,9 +249,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-3 shadow-sm">
           <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
           <div className="text-xs sm:text-sm">
-            <p className="font-semibold text-amber-900">Giới hạn tần suất đăng nhập (Rate Limit)</p>
+            <p className="font-semibold text-amber-900">Thao tác hơi nhanh</p>
             <p className="text-amber-800/80 text-xs mt-0.5">
-              Hệ thống đã tạm thời chặn yêu cầu để bảo đảm an toàn. Vui lòng thử lại sau 60 giây.
+              Hệ thống tạm dừng một chút để đảm bảo an toàn. Bạn vui lòng thử lại sau 30 giây nhé.
             </p>
           </div>
         </div>
@@ -268,11 +259,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       {searchParams.error === "concurrency_limit_exceeded" && (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-3 shadow-sm">
-          <Lock className="w-5 h-5 text-amber-600 shrink-0" />
+          <Users className="w-5 h-5 text-amber-600 shrink-0" />
           <div className="text-xs sm:text-sm">
-            <p className="font-semibold text-amber-900">Tài khoản dùng chung đang đầy ghế (Full Seats)</p>
+            <p className="font-semibold text-amber-900">Công cụ đang có đủ người dùng</p>
             <p className="text-amber-800/80 text-xs mt-0.5">
-              Dịch vụ <strong>{searchParams.tool || "AI Tool"}</strong> hiện đã đạt tối đa số người truy cập đồng thời. Vui lòng thử lại sau ít phút khi đồng nghiệp trả phiên.
+              Dịch vụ <strong>{searchParams.tool || "AI Tool"}</strong> hiện đã hết ghế trống. Bạn vui lòng quay lại sau ít phút khi đồng nghiệp trả phiên nhé.
             </p>
           </div>
         </div>
@@ -284,7 +275,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {!session?.user ? (
         <div className="space-y-12 my-6">
           {/* Main Hero Card */}
-          <div className="card-cream p-8 sm:p-12 text-center space-y-6 relative overflow-hidden bg-gradient-to-b from-white to-cream-50">
+          <div className="card-cream p-8 sm:p-12 text-center space-y-6 relative overflow-hidden bg-white">
             <div className="w-16 h-16 rounded-2xl bg-mint-50 border border-mint-200 text-mint-600 flex items-center justify-center mx-auto shadow-sm">
               <ShieldCheck className="w-8 h-8" />
             </div>
@@ -292,18 +283,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className="max-w-2xl mx-auto space-y-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-mint-100 text-mint-800 border border-mint-200">
                 <Sparkles className="w-3.5 h-3.5 text-mint-600" />
-                <span>Enterprise AI Governance Platform</span>
+                <span>Cổng Công Cụ AI Doanh Nghiệp</span>
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-ink-900 tracking-tight leading-tight">
-                Cổng Quản Trị & Khởi Chạy AI Tập Trung
+                Làm Việc Nhanh Hơn Với AI Bản Quyền
               </h1>
               <p className="text-sm sm:text-base text-ink-600 leading-relaxed max-w-xl mx-auto">
-                Kết nối an toàn tới ChatGPT Enterprise, Claude, Gemini và Cursor. Quản trị phân quyền minh bạch, kiểm soát ngân sách phòng ban và bảo mật tài khoản dùng chung.
+                Đăng nhập bằng tài khoản Google công ty để sử dụng ChatGPT Plus, Claude, Gemini và Cursor được phê duyệt.
               </p>
             </div>
 
             {/* Google OAuth Login Button */}
-            <div className="pt-2 max-w-sm mx-auto">
+            <div className="pt-2 max-w-sm mx-auto space-y-3">
               <form
                 action={async () => {
                   "use server";
@@ -342,43 +333,54 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   <ArrowRight className="w-4 h-4 text-ink-400 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </form>
-              <p className="text-[11px] text-ink-400 mt-2">
-                Chỉ dành cho nhân sự được cấp tài khoản doanh nghiệp.
+              <p className="text-[11px] text-ink-400">
+                Chỉ dành cho nhân viên có tài khoản email công ty.
               </p>
             </div>
           </div>
 
-          {/* Core Enterprise Pillars */}
+          {/* 3 Friendly Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="card-cream p-6 space-y-3">
               <div className="w-10 h-10 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center border border-mint-200">
-                <Lock className="w-5 h-5" />
+                <Zap className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-ink-900 text-sm">Kho Mật Mã Zero-Knowledge</h3>
+              <h3 className="font-bold text-ink-900 text-sm">Mở Ứng Dụng Nhanh Chóng</h3>
               <p className="text-xs text-ink-600 leading-relaxed">
-                Tài khoản dùng chung được mã hóa AES-256-GCM. Nhân viên khởi chạy trực tiếp qua Gateway mà không cần biết mật khẩu gốc.
+                Không cần nhớ mật khẩu hay nhập mã xác thực rườm rà. Bạn mở công cụ làm việc chỉ bằng một cú click chuột.
               </p>
             </div>
 
             <div className="card-cream p-6 space-y-3">
               <div className="w-10 h-10 rounded-xl bg-cream-200 text-ink-700 flex items-center justify-center border border-cream-300">
-                <Building2 className="w-5 h-5" />
+                <Users className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-ink-900 text-sm">Kiểm Soát Ngân Sách Realtime</h3>
+              <h3 className="font-bold text-ink-900 text-sm">Chia Sẻ Ghế Thông Minh</h3>
               <p className="text-xs text-ink-600 leading-relaxed">
-                Thiết lập hạn mức chi tiêu hàng tháng cho từng phòng ban. Tự động cảnh báo khi chạm trần 80% hoặc 100%.
+                Tài khoản bản quyền công ty được tự động chia sẻ chỗ ngồi nhịp nhàng, đảm bảo mọi người đều có công cụ sử dụng.
               </p>
             </div>
 
             <div className="card-cream p-6 space-y-3">
               <div className="w-10 h-10 rounded-xl bg-mint-50 text-mint-600 flex items-center justify-center border border-mint-200">
-                <FileText className="w-5 h-5" />
+                <Layers className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-ink-900 text-sm">Kiểm Toán WORM Bất Biến</h3>
+              <h3 className="font-bold text-ink-900 text-sm">Dễ Dàng Xin Cấp Quyền</h3>
               <p className="text-xs text-ink-600 leading-relaxed">
-                Mọi hành động được lưu vết và ký mã băm SHA-256. PostgreSQL Trigger chặn sửa/xóa, sẵn sàng cho ISO 27001 & SOC 2.
+                Cần thêm công cụ mới cho dự án? Bạn chỉ cần bấm nút "Yêu cầu cấp quyền" để quản lý phê duyệt tức thì.
               </p>
             </div>
+          </div>
+
+          {/* Quick link to guide page */}
+          <div className="text-center pt-2">
+            <Link
+              href="/he-thong"
+              className="inline-flex items-center gap-1.5 text-xs text-mint-700 hover:text-mint-800 font-medium underline underline-offset-4"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Tìm hiểu chi tiết cơ chế hoạt động của nền tảng tại đây</span>
+            </Link>
           </div>
         </div>
       ) : (
@@ -387,7 +389,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         /* --------------------------------------------------------------------- */
         <div className="space-y-8">
           {/* Executive Employee Header Card */}
-          <div className="card-cream p-6 sm:p-8 bg-gradient-to-r from-white via-cream-50 to-mint-50/30">
+          <div className="card-cream p-6 sm:p-8 bg-white">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               {/* User Identity Details */}
               <div className="flex items-center gap-4">
@@ -396,7 +398,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     <img
                       src={dbEmployee.avatarUrl}
                       alt={dbEmployee.name || session?.user?.name || "User"}
-                      className="w-16 h-16 rounded-2xl object-cover border-2 border-mint-300 shadow-sm"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-mint-200 shadow-sm"
                     />
                   ) : (
                     <div className="w-16 h-16 rounded-2xl bg-mint-500 text-white flex items-center justify-center font-bold text-xl shadow-mint">
@@ -418,7 +420,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           : "bg-mint-100 text-mint-800 border-mint-200"
                       }`}
                     >
-                      {dbEmployee?.role === "ROOT_ADMIN" ? "ROOT ADMINISTRATOR" : "EMPLOYEE"}
+                      {dbEmployee?.role === "ROOT_ADMIN" ? "Quản Trị Viên" : "Thành Viên"}
                     </span>
                   </div>
 
@@ -439,11 +441,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               </div>
 
               {/* Quick Actions & Logout */}
-              <div className="flex items-center gap-2.5 flex-wrap self-stretch md:self-auto justify-end">
+              <div className="flex items-center gap-2 flex-wrap self-stretch md:self-auto justify-end">
                 {dbEmployee?.role === "ROOT_ADMIN" && (
                   <Link
                     href="/admin"
-                    className="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1.5 transition-colors shadow-sm"
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1.5 transition-colors shadow-sm"
                   >
                     <ShieldAlert className="w-3.5 h-3.5" />
                     <span>Cổng Quản Trị</span>
@@ -451,11 +453,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 )}
 
                 <Link
-                  href="/audit"
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-cream-100 text-ink-700 border border-cream-300 transition-colors shadow-sm flex items-center gap-1.5"
+                  href="/he-thong"
+                  className="px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-cream-100 text-ink-700 border border-cream-300 transition-colors shadow-sm flex items-center gap-1.5"
                 >
-                  <FileText className="w-3.5 h-3.5 text-ink-500" />
-                  <span>Xem Kiểm Toán</span>
+                  <BookOpen className="w-3.5 h-3.5 text-mint-600" />
+                  <span>Hướng Dẫn</span>
                 </Link>
 
                 <form
@@ -466,7 +468,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 >
                   <button
                     type="submit"
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center gap-1.5"
                     title="Đăng xuất khỏi hệ thống"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -476,19 +478,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               </div>
             </div>
 
-            {/* Employee KPI Stats Bar */}
+            {/* Employee Stats Bar */}
             <div className="mt-6 pt-6 border-t border-cream-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
               <div className="space-y-0.5">
-                <span className="text-ink-500 text-[11px]">Công cụ được cấp</span>
+                <span className="text-ink-500 text-[11px]">Công cụ khả dụng</span>
                 <p className="text-lg font-bold text-ink-900 font-mono">
                   {userGrants.length} <span className="text-xs font-normal text-ink-500">dịch vụ</span>
                 </p>
               </div>
 
               <div className="space-y-0.5">
-                <span className="text-ink-500 text-[11px]">Phiên đang giữ</span>
+                <span className="text-ink-500 text-[11px]">Đang sử dụng</span>
                 <p className="text-lg font-bold text-mint-600 font-mono">
-                  {activeLeasesHeldCount} <span className="text-xs font-normal text-ink-500">ghế</span>
+                  {activeLeasesHeldCount} <span className="text-xs font-normal text-ink-500">công cụ</span>
                 </p>
               </div>
 
@@ -520,20 +522,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <div>
                 <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
                   <Compass className="w-5 h-5 text-mint-600" />
-                  Không Gian Làm Việc AI Của Bạn
+                  Công Cụ Sẵn Sàng Làm Việc
                 </h2>
                 <p className="text-xs text-ink-500 mt-0.5">
-                  Các công cụ AI doanh nghiệp đã được phê duyệt. Bấm "Khởi chạy" để kết nối an toàn qua Gateway.
+                  Chọn công cụ bạn muốn sử dụng để bắt đầu làm việc.
                 </p>
               </div>
-              <span className="text-xs font-mono text-mint-800 bg-mint-100 px-3 py-1 rounded-full border border-mint-200 font-semibold">
-                {userGrants.length} dịch vụ kích hoạt
+              <span className="text-xs font-mono text-mint-800 bg-mint-50 px-3 py-1 rounded-full border border-mint-200 font-semibold">
+                {userGrants.length} công cụ
               </span>
             </div>
 
             {userGrants.length === 0 ? (
-              /* High-end Guided Onboarding State (Not a dead-end!) */
-              <div className="card-cream p-8 sm:p-10 text-center space-y-4 bg-gradient-to-b from-white to-cream-50">
+              /* High-end Guided Onboarding State */
+              <div className="card-cream p-8 sm:p-10 text-center space-y-4 bg-white">
                 <div className="w-14 h-14 rounded-2xl bg-mint-50 text-mint-600 flex items-center justify-center mx-auto border border-mint-200 shadow-sm">
                   <Sparkles className="w-7 h-7" />
                 </div>
@@ -542,7 +544,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     Bạn chưa có quyền sử dụng công cụ AI nào
                   </h3>
                   <p className="text-xs text-ink-600 leading-relaxed">
-                    Tài khoản của bạn đã được kết nối an toàn với hệ thống doanh nghiệp. Hãy chọn các công cụ bạn muốn sử dụng từ <strong>Danh mục công cụ</strong> bên dưới và bấm <strong>"Yêu cầu cấp quyền"</strong> để bắt đầu.
+                    Tài khoản của bạn đã được kết nối an toàn. Hãy chọn công cụ bạn muốn sử dụng từ <strong>Danh mục bên dưới</strong> và bấm <strong>"Yêu cầu cấp quyền"</strong> để quản trị viên phê duyệt nhé.
                   </p>
                 </div>
               </div>
@@ -575,14 +577,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
-                            {isVaultConfigured && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono bg-cream-200 text-ink-700 border border-cream-300">
-                                <Lock className="w-2.5 h-2.5 text-mint-600" />
-                                VAULT
-                              </span>
-                            )}
                             <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-mint-50 text-mint-700 border border-mint-200">
-                              ACTIVE
+                              SẴN SÀNG
                             </span>
                           </div>
                         </div>
@@ -595,13 +591,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         {/* Shared Vault Lease Mutex Indicator */}
                         {isVaultConfigured && (
                           <div className="p-3 rounded-xl bg-cream-50 border border-cream-200 space-y-2">
-                            <div className="flex items-center justify-between text-[11px] font-mono">
+                            <div className="flex items-center justify-between text-[11px]">
                               <span className="text-ink-600 flex items-center gap-1.5">
-                                <Lock className="w-3 h-3 text-mint-600" />
-                                Ghế dùng chung (Live Redis):
+                                <Users className="w-3.5 h-3.5 text-mint-600" />
+                                Tình trạng ghế:
                               </span>
-                              <span className={isSeatFull ? "text-amber-700 font-bold" : "text-mint-700 font-semibold"}>
-                                {vaultInfo.activeSlots} / {vaultInfo.maxConcurrency} slots
+                              <span className={isSeatFull ? "text-amber-700 font-semibold" : "text-mint-700 font-semibold"}>
+                                {vaultInfo.activeSlots} / {vaultInfo.maxConcurrency} người đang dùng
                               </span>
                             </div>
 
@@ -610,7 +606,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                               <div className="flex items-center justify-between p-2 rounded-lg bg-mint-100/70 border border-mint-200 text-mint-900 text-xs">
                                 <span className="flex items-center gap-1.5 font-medium">
                                   <span className="w-2 h-2 rounded-full bg-mint-500 animate-pulse" />
-                                  <span>Đang giữ phiên: ~{vaultInfo.remainingMinutes} phút</span>
+                                  <span>Đang mở phiên: ~{vaultInfo.remainingMinutes} phút còn lại</span>
                                 </span>
                                 <form action={handleReleaseSession}>
                                   <input type="hidden" name="credentialId" value={vaultInfo.credentialId} />
@@ -618,25 +614,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                                     type="submit"
                                     className="px-2.5 py-1 rounded-md bg-white hover:bg-cream-100 text-mint-800 text-[11px] font-semibold border border-mint-300 shadow-sm transition-colors"
                                   >
-                                    Trả ghế
+                                    Trả lại chỗ
                                   </button>
                                 </form>
                               </div>
                             )}
                           </div>
                         )}
-
-                        {/* Usage Metrics */}
-                        <div className="pt-2 border-t border-cream-200 grid grid-cols-2 gap-2 text-[11px] text-ink-500 font-mono">
-                          <div className="flex items-center gap-1.5">
-                            <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                            <span>Lượt dùng: <strong className="text-ink-800">{grant.accessCount || 0}</strong></span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <DollarSign className="w-3.5 h-3.5 text-mint-600 shrink-0" />
-                            <span>Đơn giá: <strong className="text-mint-800">${details.costPerLaunch.toFixed(2)}</strong></span>
-                          </div>
-                        </div>
                       </div>
 
                       {/* Launch Button */}
@@ -651,7 +635,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                               : "bg-mint-600 hover:bg-mint-500 shadow-mint"
                           }`}
                         >
-                          <span>{isSeatFull && !vaultInfo?.hasActiveLease ? "Đầy ghế • Thử lại sau" : "Khởi Chạy Dịch Vụ"}</span>
+                          <span>{isSeatFull && !vaultInfo?.hasActiveLease ? "Đang bận • Thử lại sau" : "Mở Công Cụ Ngay"}</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </div>
@@ -670,10 +654,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <div>
                 <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
                   <Layers className="w-5 h-5 text-mint-600" />
-                  Danh Mục Công Cụ Doanh Nghiệp (Self-Service Catalog)
+                  Danh Mục Công Cụ AI Khả Dụng
                 </h2>
                 <p className="text-xs text-ink-500 mt-0.5">
-                  Các công cụ AI được doanh nghiệp phê chuẩn. Bạn có thể gửi yêu cầu cấp quyền ngay bên dưới.
+                  Bạn có thể bấm "Yêu Cầu Cấp Quyền" đối với các công cụ phục vụ công việc của mình.
                 </p>
               </div>
 
@@ -681,7 +665,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 {availableToRequest.map((tool: ResourceInfo) => (
                   <div
                     key={tool.name}
-                    className="card-cream p-5 flex flex-col justify-between space-y-4 bg-white/80"
+                    className="card-cream p-5 flex flex-col justify-between space-y-4 bg-white"
                   >
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">

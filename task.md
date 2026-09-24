@@ -1,49 +1,42 @@
-# Task Tracking: Phase 6 — Enterprise Production Transformation & Mint-Cream UI/UX Overhaul
+# Task Tracking: Phase 7 — Human-Centric UI/UX Simplification & Interactive Platform Guide
 
-Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 6, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
+Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 7, bám sát 100% phân rã công việc từ [docs/PHASE.md](./docs/PHASE.md). Không tự thêm task ngoài phạm vi.
 
 ---
 
-## Nhóm 1: Hệ Thống Design Tokens & Theme Engine Mint & Cream
-- [x] Tinh chỉnh `apps/web/tailwind.config.js` bổ sung bảng màu mint-cream chuẩn cao cấp (`cream`, `mint`, `ink`)
-- [x] Cập nhật `apps/web/src/app/globals.css` định nghĩa các utility classes: `bg-cream-canvas`, `card-cream`, `badge-mint`, `btn-mint-primary`, `btn-cream-secondary`
+## Nhóm 1: Hệ Thống Bảng Màu Trầm Dịu Mắt (Calm Muted Design System)
+- [x] Cập nhật `apps/web/tailwind.config.js`: Tinh chỉnh bảng màu sang tông trầm ấm (Muted Warm Stone, Gentle Sage, Soft Slate)
+- [x] Cập nhật `apps/web/src/styles/globals.css`: Tối ưu các thẻ `card-muted`, hiệu ứng hover nhẹ nhàng, nền êm dịu
 
-## Nhóm 2: Cổng Điều Hướng Chung & Dọn Dẹp Prototype (Navigation & Clean Layout)
-- [x] Nâng cấp thanh điều hướng chính `apps/web/src/components/Navbar.tsx` (hoặc header layout):
-  - [x] Brand Logo cao cấp "AI Access Gateway • Enterprise Portal" với icon xanh ngọt và kem sang trọng
-  - [x] Trạng thái hệ thống doanh nghiệp (Enterprise SLA Indicator) thay vì hiển thị tên driver DB
-  - [x] Dropdown/Avatar người dùng tinh gọn, liên kết nhanh giữa Cổng Nhân Viên, Quản Trị và Tuân Thủ
-- [x] Xóa bỏ hoàn toàn khung hiển thị bảng DB `CHI TIẾT BẢN GHI POSTGRESQL` và các banner kỹ thuật
+## Nhóm 2: Xây Dựng Trang "Hệ Thống Nền Tảng" (`apps/web/src/app/he-thong/page.tsx`)
+- [x] Thiết kế trang `/he-thong` với bố cục thông thoáng, thanh lịch:
+  - [x] Phần 1: Giới thiệu & Triết lý vận hành (Tại sao doanh nghiệp cần AI Access Gateway?)
+  - [x] Phần 2: Cơ chế hoạt động trực quan (Ủy quyền an toàn, không lộ mật khẩu gốc)
+  - [x] Phần 3: Hướng dẫn nhanh cho nhân viên (3 bước làm việc: Chọn công cụ -> Khởi chạy -> Trả ghế)
+  - [x] Phần 4: Cơ chế tự phục vụ (Gửi yêu cầu cấp quyền và quy trình phê duyệt)
+  - [x] Phần 5: Câu hỏi thường gặp (FAQ giải đáp băn khoăn cho người mới)
 
-## Nhóm 3: Không Gian Làm Việc Nhân Viên & Danh Mục Self-Service (`apps/web/src/app/page.tsx`)
-- [x] Xây dựng lại Hero Header Nhân Viên: Tên, avatar, vai trò (`EMPLOYEE` / `ROOT_ADMIN`), phòng ban và chỉ số tóm tắt (Công cụ hoạt động, phiên đang giữ)
-- [x] Xây dựng khu vực "Không Gian Làm Việc AI Của Bạn" (Active AI Workspace):
-  - [x] Thẻ dịch vụ AI thiết kế Mint & Cream với biểu tượng thương hiệu sắc nét
-  - [x] Hiển thị tình trạng ghế dùng chung thời gian thực từ Redis (`X/Y slots`)
-  - [x] Nút khởi chạy qua Gateway với animation mượt mà
-  - [x] Nút "Trả slot (Release)" khi nhân viên đang giữ ghế
-- [x] Xây dựng khu vực "Danh Mục Công Cụ Doanh Nghiệp & Yêu Cầu Cấp Quyền" (AI Catalog & Access Request):
-  - [x] Hiển thị các công cụ khả dụng trong công ty
-  - [x] Thêm Server Action `handleRequestAccess`: Cho phép nhân viên bấm "Yêu cầu cấp quyền", tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs` có ký SHA-256
+## Nhóm 3: Tinh Gọn Hóa Header & Footer (`apps/web/src/app/layout.tsx`)
+- [x] Nâng cấp thanh điều hướng:
+  - [x] Thêm liên kết nổi bật tới trang "Hệ Thống"
+  - [x] Đổi tên "Tuân Thủ & WORM" thành "Nhật Ký Sử Dụng"
+  - [x] Đổi huy hiệu SLA sang ngôn ngữ thân thiện: `Hệ thống ổn định 99.9%`
+- [x] Tinh giản Footer: Ngôn từ cô đọng, thanh lịch, liên kết nhanh
 
-## Nhóm 4: Cổng Quản Trị Doanh Nghiệp Tinh Hoa (`apps/web/src/app/admin/page.tsx`)
-- [x] Chuyển đổi toàn bộ giao diện Cổng Quản Trị sang hệ thiết kế Mint & Cream:
-  - [x] Bảng tổng quan KPI với thẻ số liệu tương phản cao, đổ bóng nhẹ
-  - [x] Tab Quản lý Ngân sách phòng ban & Hạn mức chi tiêu
-  - [x] Tab Kho Mật Mã Bản Quyền Dùng Chung (Shared Vault): Thẻ tài khoản mã hóa AES-256-GCM, số ghế trực tiếp từ Redis, nút xoay vòng mật khẩu và tạm dừng/kích hoạt
-  - [x] Tab Ma Trận Phân Quyền Nhân Sự: Tìm kiếm, cấp mới quyền AI với thời hạn, thu hồi tức thì
-  - [x] Nút xuất nhanh báo cáo tuân thủ CSV
+## Nhóm 4: Tinh Gọn Hóa Không Gian Làm Việc Nhân Viên (`apps/web/src/app/page.tsx`)
+- [x] Rà soát và loại bỏ toàn bộ từ ngữ đao to búa lớn khỏi Hero Section và màn hình đăng nhập
+- [x] Tinh gọn thẻ dịch vụ AI:
+  - [x] Hiển thị rõ ràng: Tên công cụ, Trạng thái (`Sẵn sàng` / `Đang bận: X/Y người dùng`)
+  - [x] Nút bấm trực quan: `Mở công cụ ngay` và `Trả lại chỗ`
+  - [x] Thông báo nhẹ nhàng khi đầy người: *"Công cụ hiện có đủ người dùng, bạn vui lòng quay lại sau ít phút nhé"*
+- [x] Danh mục công cụ yêu cầu cấp quyền: Thiết kế dạng danh sách tối giản, 1-click gửi yêu cầu với lời nhắc thân thiện
 
-## Nhóm 5: Trung Tâm Tuân Thủ & Phân Tích ROI (`apps/web/src/app/audit/page.tsx`)
-- [x] Tái thiết kế trang Kiểm toán Tuân thủ:
-  - [x] Chứng nhận WORM Immutability với thiết kế trang trọng, chuẩn mực
-  - [x] Thước đo toàn vẹn Checksum SHA-256 (100% Verified)
-  - [x] Thẻ tính toán ROI doanh nghiệp (Thời gian tiết kiệm, giá trị kinh tế)
-  - [x] Thanh phân bổ sự kiện màu pastel và bộ lọc sự kiện trực quan
-  - [x] Nút xuất CSV (RFC 4180) và ISO 27001 / SOC 2 JSON
+## Nhóm 5: Tinh Gọn Hóa Cổng Quản Trị & Trang Nhật Ký
+- [x] Trang Quản Trị (`apps/web/src/app/admin/page.tsx`): Dùng từ ngữ nghiệp vụ đời thường (Ngân sách phòng ban, Quản lý tài khoản công ty, Cấp quyền sử dụng)
+- [x] Trang Nhật Ký (`apps/web/src/app/audit/page.tsx`): Đổi tên thành "Nhật Ký Hoạt Động", trình bày dòng thời gian sự kiện trực quan, dễ hiểu ai đã mở công cụ nào
 
-## Nhóm 6: Kiểm Chứng Toàn Diện & Nghiệm Thu
+## Nhóm 6: Kiểm Chứng Kỹ Thuật & Đóng Giai Đoạn
 - [x] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`
-- [x] Kiểm tra TypeScript compilation: `npx tsc --noEmit`
+- [x] Kiểm tra TypeScript compilation: `npx tsc --project apps/web/tsconfig.json --noEmit`
 - [x] Chạy `npx turbo build` đảm bảo mã thoát 0
-- [x] Lập báo cáo nghiệm thu `docs/reports/PHASE-6-IMPLEMENTATION-REPORT.md`
+- [x] Đẩy commit và cập nhật báo cáo nghiệm thu

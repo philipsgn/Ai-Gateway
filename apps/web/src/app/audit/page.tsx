@@ -111,11 +111,11 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
               </Link>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-900 flex items-center gap-2.5">
                 <ShieldCheck className="w-7 h-7 text-mint-600" />
-                Tuân Thủ & Kiểm Toán Bất Biến (WORM Audit)
+                Nhật Ký Hoạt Động & Thống Kê
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-ink-600 mt-2 pl-10 max-w-2xl leading-relaxed">
-              Hồ sơ kiểm toán chuẩn ISO/IEC 27001 & SOC 2 Type II với chính sách Write-Once-Read-Many (WORM) thực thi tại tầng PostgreSQL Database Trigger và mã băm SHA-256 bất biến.
+              Lưu vết mọi lượt mở công cụ, đăng nhập và cấp quyền một cách minh bạch, tự động bảo vệ chống sửa đổi dữ liệu.
             </p>
           </div>
 
@@ -127,7 +127,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
               className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white text-ink-700 border border-cream-300 hover:bg-cream-100 transition-all shadow-sm"
             >
               <Download className="w-3.5 h-3.5 text-mint-600" />
-              <span>Xuất CSV (RFC 4180)</span>
+              <span>Xuất File CSV</span>
             </a>
             <a
               href="/api/audit/export?format=json"
@@ -136,7 +136,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
               className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-mint-600 text-white hover:bg-mint-500 transition-all shadow-mint"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Gói ISO 27001 / SOC 2 JSON</span>
+              <span>Báo Cáo JSON</span>
             </a>
           </div>
         </div>
@@ -158,7 +158,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
         {/* Card 1: WORM Status */}
         <div className="card-cream p-5 bg-white flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink-600">Trạng Thái WORM</span>
+            <span className="text-xs font-semibold text-ink-600">Chống Sửa Đổi</span>
             <div className="p-1.5 rounded-lg bg-mint-50 text-mint-600 border border-mint-200">
               <ShieldCheck className="w-4 h-4" />
             </div>
@@ -168,7 +168,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
               <span className="text-xl font-bold text-mint-700 font-mono">BẢO VỆ 100%</span>
             </div>
             <p className="text-[11px] text-ink-500 mt-1">
-              Trigger PostgreSQL chặn toàn bộ UPDATE & DELETE
+              Dữ liệu được khóa tự động, không thể chỉnh sửa hay xóa
             </p>
           </div>
         </div>
@@ -176,7 +176,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
         {/* Card 2: Cryptographic Integrity */}
         <div className="card-cream p-5 bg-white flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-ink-600">Toàn Vẹn Checksum</span>
+            <span className="text-xs font-semibold text-ink-600">Toàn Vẹn Dữ Liệu</span>
             <div className="p-1.5 rounded-lg bg-mint-50 text-mint-600 border border-mint-200">
               <CheckCircle className="w-4 h-4" />
             </div>

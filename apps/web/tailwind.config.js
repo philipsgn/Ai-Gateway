@@ -10,25 +10,25 @@ module.exports = {
     extend: {
       colors: {
         cream: {
-          50: "#FDFBF7",
-          100: "#FAF7F2", // Core canvas background
-          200: "#F4EFE6", // Subtle panel background
-          300: "#EFE8DC", // Delicate card border
-          400: "#D8CEBC", // Border hover
-          500: "#B8AC96",
-          600: "#948772",
+          50: "#FAF9F6",
+          100: "#F6F5F0", // Calming subdued warm stone canvas
+          200: "#EFECE6", // Soft calm panel background
+          300: "#E5E1D8", // Gentle understated border
+          400: "#D3CEC2", // Border hover
+          500: "#A8A295",
+          600: "#78716C",
         },
         mint: {
-          50: "#ECFDF5", // Sweet mint pill background
-          100: "#D1FAE5",
-          200: "#A7F3D0", // Mint border accent
-          300: "#6EE7B7",
-          400: "#34D399",
-          500: "#10B981", // Brand primary emerald
-          600: "#059669",
-          700: "#047857",
-          800: "#065F46",
-          900: "#064E3B",
+          50: "#F0F5F2", // Soothing muted sage pill
+          100: "#E2ECE5",
+          200: "#C4DBD0", // Gentle sage border
+          300: "#9EBEAD",
+          400: "#6B9B82",
+          500: "#3E7B5C", // Calming balanced sage emerald (not harsh neon)
+          600: "#32654B",
+          700: "#27503B",
+          800: "#1E3E2E",
+          900: "#162E22",
         },
         ink: {
           50: "#F9FAFB",
@@ -39,14 +39,14 @@ module.exports = {
           500: "#6B7280", // Muted text
           600: "#4B5563", // Secondary text
           700: "#374151",
-          800: "#1F2937", // Body primary text
-          900: "#111827", // Heading deep charcoal
+          800: "#24292F", // Calm charcoal body
+          900: "#181C21", // Deep soft black
         },
       },
       boxShadow: {
-        cream: "0 2px 8px -2px rgba(184, 172, 150, 0.15), 0 1px 4px -1px rgba(0, 0, 0, 0.04)",
-        "cream-hover": "0 10px 25px -5px rgba(184, 172, 150, 0.25), 0 4px 10px -2px rgba(0, 0, 0, 0.05)",
-        mint: "0 4px 14px -2px rgba(16, 185, 129, 0.25)",
+        cream: "0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03)",
+        "cream-hover": "0 8px 20px -4px rgba(0, 0, 0, 0.07), 0 2px 6px -2px rgba(0, 0, 0, 0.03)",
+        mint: "0 2px 10px -2px rgba(62, 123, 92, 0.18)",
       },
     },
   },

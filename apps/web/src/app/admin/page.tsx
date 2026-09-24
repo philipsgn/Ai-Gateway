@@ -429,10 +429,10 @@ export default async function AdminPortalPage() {
               <span>Root Administrator Portal</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-900">
-              Cổng Quản Trị Phân Quyền & Giám Sát AI
+              Cổng Quản Trị Hệ Thống AI
             </h1>
             <p className="text-ink-600 text-sm max-w-xl leading-relaxed">
-              Quản trị danh bạ nhân sự, cấp phát quyền và theo dõi tần suất sử dụng thực tế của từng dịch vụ AI. Tự động mã hóa Vault AES-256-GCM và lưu vết kiểm toán bất biến (WORM Audit Trail).
+              Quản lý danh sách nhân sự, phân bổ ngân sách phòng ban và cấp phát quyền sử dụng các công cụ AI công ty một cách dễ dàng và an toàn.
             </p>
           </div>
 
@@ -441,16 +441,16 @@ export default async function AdminPortalPage() {
               href="/api/audit/export?format=csv"
               download
               className="px-3.5 py-2.5 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-mint active:scale-[0.99]"
-              title="Xuất báo cáo tuân thủ WORM định dạng CSV chuẩn RFC 4180"
+              title="Xuất nhật ký sử dụng định dạng CSV"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Xuất Tuân Thủ (CSV)</span>
+              <span>Xuất Báo Cáo (CSV)</span>
             </a>
             <Link
               href="/audit"
               className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-cream-100 text-ink-700 text-xs font-semibold border border-cream-300 flex items-center gap-2 transition-colors shadow-sm"
             >
-              <span>Nhật Ký & Tuân Thủ</span>
+              <span>Nhật Ký Sử Dụng</span>
               <ExternalLink className="w-3.5 h-3.5 text-ink-400" />
             </Link>
           </div>
@@ -775,7 +775,7 @@ export default async function AdminPortalPage() {
               <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
                 Kho Tài Khoản Dùng Chung (Shared Credential Vault)
                 <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-mint-100 text-mint-800 border border-mint-200">
-                  AES-256-GCM + Redis Mutex
+                  Bảo mật tự động + Giới hạn ghế đồng thời
                 </span>
               </h2>
               <p className="text-xs text-ink-500">
@@ -824,7 +824,7 @@ export default async function AdminPortalPage() {
               <div>
                 <label className="block text-[11px] font-semibold text-ink-700 mb-1 flex justify-between">
                   <span>Mật khẩu hoặc Master Secret</span>
-                  <span className="text-mint-700 text-[10px] font-semibold">Tự động mã hóa AES-256-GCM</span>
+                  <span className="text-mint-700 text-[10px] font-semibold">Tự động mã hóa an toàn</span>
                 </label>
                 <input
                   type="password"
@@ -911,7 +911,7 @@ export default async function AdminPortalPage() {
             <div className="p-3 rounded-xl bg-white border border-cream-200 text-[11px] text-ink-600 space-y-1">
               <span className="font-semibold text-ink-800 flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5 text-mint-600" />
-                Chuẩn Mã Hóa AES-256-GCM
+                Bảo Mật Tài Khoản Công Ty
               </span>
               <p>Mỗi tài khoản được mã hóa với IV ngẫu nhiên 96-bit và Authentication Tag 128-bit chống mọi hành vi giả mạo ciphertext.</p>
             </div>
@@ -959,7 +959,7 @@ export default async function AdminPortalPage() {
                         <td className="py-3.5 px-4">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-mint-50 text-mint-800 border border-mint-200">
                             <Lock className="w-2.5 h-2.5 text-mint-600" />
-                            AES-256-GCM
+                            Mã hóa an toàn
                           </span>
                         </td>
                         <td className="py-3.5 px-4 w-44">

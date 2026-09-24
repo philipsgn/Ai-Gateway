@@ -1,80 +1,79 @@
-# Phase 6: Enterprise Production Transformation & Mint-Cream UI/UX Overhaul
+# Phase 7: Human-Centric UI/UX Simplification & Interactive Platform Guide
 
 ## 1. Bối Cảnh & Mục Tiêu Nghiệp Vụ (Context & Objective)
 
-Hệ thống đã hoàn tất 100% phần móng hạ tầng kỹ thuật (Real Identity Google OAuth, Launch Gateway, Department Budget, Shared Credential Vault AES-256-GCM, Concurrency Lease Mutex Redis, và WORM Audit Trigger). Tuy nhiên, giao diện hiện tại mang nặng tính chất **Developer Debug Harness** (hiển thị bảng DB thô, câu lệnh SQL, thông báo lỗi cookie/kết nối kỹ thuật) và tông màu tối chưa đạt chuẩn thương phẩm.
+Hệ thống đã đạt mức độ hoàn thiện kỹ thuật cao (100% Real Infrastructure, Zero Mock, AES-256-GCM, Redis Lease Mutex, WORM Trigger). Tuy nhiên, phản hồi thực tế từ người dùng cho thấy:
+1. **Rào cản ngôn ngữ chuyên ngành (Hardcore Jargon):** Các trang chính hiện tại lạm dụng quá nhiều thuật ngữ kỹ thuật rườm rà (*"Zero-Knowledge Vault", "WORM Immutability", "SHA-256 Checksum", "Concurrency Lease Mutex", "RFC 4180", "SOC 2 Type II"*), gây bối rối cho nhân viên thông thường và nhà phát triển theo định hướng VibeCoder.
+2. **Thiếu một trang hướng dẫn trực quan (Platform Guide):** Người dùng cần một nơi tập trung để hiểu được: Nền tảng hoạt động như thế nào? Tại sao phải dùng qua Gateway? Cách khởi chạy, cách xin quyền và cách trả ghế ra sao?
+3. **Thị giác & Phong cách thiết kế:** Cần điều chỉnh sang **tông màu trầm dịu nhẹ, thanh lịch (Muted Warm Stone & Calming Sage)**, giảm độ tương phản chói mắt, tạo cảm giác thư thái, tinh tế chuẩn Production SaaS (tương tự Linear, Notion, Raycast).
 
-**Mục tiêu Phase 6:** Chuyển đổi toàn diện hệ thống thành một **Nền tảng Quản trị & Phân quyền AI Doanh nghiệp Hoàn Chỉnh (Enterprise Production SaaS)**:
-1. Áp dụng ngôn ngữ thiết kế **Mint & Cream (Kem ấm #FAF7F2 & Xanh ngọt ngào #10B981, #ECFDF5)** mang lại cảm giác sang trọng, trang nhã, hiện đại tương tự các sản phẩm SaaS hàng đầu thế giới (Linear, Stripe, Notion).
-2. Xóa bỏ 100% các khung chẩn đoán debug kỹ thuật hiển thị trên màn hình người dùng.
-3. Hoàn thiện trải nghiệm người dùng mới: Khi nhân viên chưa có quyền, cung cấp **Danh mục công cụ AI doanh nghiệp (Self-Service Catalog)** với tính năng **"Yêu cầu cấp quyền (Request Access)"** 1-click, tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs`.
-4. Chuẩn hóa trải nghiệm Cổng Quản Trị `/admin` và Trung Tâm Tuân Thủ `/audit` theo tiêu chuẩn Senior Fullstack Developer.
+**Mục tiêu Phase 7:**
+1. Tạo trang chuyên biệt **"Hệ Thống Nền Tảng" (`/he-thong`)** giải thích trọn vẹn cơ chế vận hành, quy trình sử dụng, bảo mật và hỏi đáp (FAQ) trực quan.
+2. **Tinh gọn hóa 100% các trang chính (`/`, `/admin`, `/audit`)**: Chuyển đổi toàn bộ ngôn ngữ sang từ ngữ thông dụng, dễ hiểu, thân thiện ("Công cụ AI", "Mở ứng dụng", "Đang bận / Còn chỗ", "Xin quyền sử dụng", "Nhật ký hoạt động").
+3. **Nâng cấp Design Tokens:** Tông màu trầm nhẹ nhàng, nền đá ấm dịu (`#F8F7F4`), điểm nhấn sage thanh lịch (`#3B7A57`, `#EBF3EE`), viền mờ tối giản (`#E5E3DC`).
 
 ---
 
 ## 2. Tiêu Chí Nghiệm Thu (Definition of Done)
 
-- [ ] **Giao Diện Mint & Cream Thống Nhất:** Toàn bộ các trang (`/`, `/admin`, `/audit`, Navigation Bar) sử dụng nền kem ấm (`#FAF7F2`), thẻ trắng sữa viền kem tinh tế (`#EFE8DC`) và các điểm nhấn xanh ngọt ngào (`#10B981`, `#ECFDF5`).
-- [ ] **Zero Prototype Elements:** 100% các khung "CHI TIẾT BẢN GHI POSTGRESQL (TABLE: EMPLOYEES)", "Dữ liệu được truy vấn THẬT...", và các câu lệnh SQL bị loại bỏ khỏi giao diện người dùng.
-- [ ] **Trải Nghiệm Tự Phục Vụ (Self-Service AI Catalog):** Nhân viên chưa được cấp quyền có thể xem danh mục các công cụ (ChatGPT Team, Claude Enterprise, Gemini Advanced, Cursor Pro) và gửi yêu cầu cấp quyền ngay lập tức.
-- [ ] **Giữ Vững 100% Logic Thật:** Mọi luồng xác thực Google OAuth, Launch Gateway, Redis Lease Mutex, Vault AES-256-GCM và WORM Trigger tiếp tục chạy thật trên Neon PostgreSQL và Upstash Redis.
-- [ ] **Không Mock:** `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả.
-- [ ] **Build Production Thành Công:** `npx turbo build` hoàn tất với mã thoát 0.
+- [ ] **Trang Hệ Thống Nền Tảng (`/he-thong`):** Đã khởi tạo và hoạt động mượt mà, bao gồm: Sơ đồ cơ chế hoạt động, Hướng dẫn 3 bước cho nhân viên, Cơ chế bảo mật không lộ mật khẩu, và mục Hỏi-Đáp (FAQ).
+- [ ] **Giao Diện Tông Trầm Thanh Lịch (Calm Muted Palette):** Nền web và các thẻ card sở hữu sắc độ trầm ấm dịu mắt, độ tương phản hài hòa, không lòe loẹt.
+- [ ] **Loại Bỏ Thuật Ngữ Hardcore Trên Trang Chính:**
+  - Trang chủ (`/`): Ngôn từ thân thiện, thể hiện rõ danh sách công cụ AI, trạng thái ghế dễ hiểu ("Đang có 1/3 người dùng", "Mở công cụ", "Trả lại ghế", "Gửi yêu cầu").
+  - Thanh Header: Các liên kết chuẩn mực: `Không Gian Làm Việc`, `Hệ Thống`, `Nhật Ký Sử Dụng`, `Quản Trị`.
+  - Cổng Quản Trị (`/admin`): Chuyển sang thuật ngữ quản trị thực tế (Ngân sách, Tài khoản dùng chung, Phân quyền).
+  - Cổng Kiểm Toán (`/audit`): Chuyển thành "Nhật Ký Hoạt Động & Thống Kê" gần gũi.
+- [ ] **Bảo Toàn 100% Hạ Tầng Kỹ Thuật Thật:** Không mock, toàn bộ kết nối PostgreSQL, Upstash Redis, Google OAuth, mã hóa AES-256-GCM tiếp tục vận hành chuẩn xác.
+- [ ] **Kiểm Tra Không Mock:** `git grep -i "Mock" apps/web/src/` cho ra 0 kết quả.
+- [ ] **Build Thành Công:** `npx turbo build` thành công với mã thoát 0.
 
 ---
 
 ## 3. Ngoài Phạm Vi (Out of Scope)
 
-- ❌ Không phát triển hệ thống thanh toán qua cổng ngân hàng bên ngoài (Stripe/MoMo) trong phase này.
-- ❌ Không thay đổi cấu trúc các bảng cơ sở dữ liệu đã ổn định (`employees`, `departments`, `grants`, `vault_credentials`, `audit_logs`).
+- ❌ Không thay đổi logic backend nghiệp vụ hay cấu trúc schema cơ sở dữ liệu đã kiểm thử thành công.
+- ❌ Không thêm các thư viện CSS nặng nề làm giảm tốc độ tải trang.
 
 ---
 
 ## 4. Kế Hoạch Phân Rã Nhiệm Vụ (Task Breakdown)
 
-### Nhóm 1: Hệ Thống Design Tokens & Theme Engine Mint & Cream
-- [ ] Tinh chỉnh `apps/web/tailwind.config.js` bổ sung bảng màu mint-cream chuẩn cao cấp:
-  - `cream`: 50: `#FDFBF7`, 100: `#FAF7F2`, 200: `#F4EFE6`, 300: `#EFE8DC`, 400: `#D8CEBC`
-  - `mint`: 50: `#ECFDF5`, 100: `#D1FAE5`, 200: `#A7F3D0`, 300: `#6EE7B7`, 400: `#34D399`, 500: `#10B981`, 600: `#059669`, 700: `#047857`
-  - `ink`: 900: `#111827`, 800: `#1F2937`, 700: `#374151`, 600: `#4B5563`, 500: `#6B7280`
-- [ ] Cập nhật `apps/web/src/app/globals.css` định nghĩa các utility classes: `bg-cream-canvas`, `card-cream`, `badge-mint`, `btn-mint-primary`, `btn-cream-secondary`.
+### Nhóm 1: Hệ Thống Bảng Màu Trầm Dịu Mắt (Calm Muted Design System)
+- [ ] Cập nhật `apps/web/tailwind.config.js`: Tinh chỉnh bảng màu sang tông trầm ấm (Muted Warm Stone, Gentle Sage, Soft Slate):
+  - `stone`: `#FAF9F6`, `#F4F2EC`, `#ECE8E0`, `#DDD8CD`
+  - `sage`: `#427A5B`, `#EAF2ED`, `#D5E5DB`, `#2D5940`
+  - `slate`: `#24292F`, `#4A5568`, `#718096`
+- [ ] Cập nhật `apps/web/src/styles/globals.css`: Tối ưu các thẻ `card-muted`, hiệu ứng hover nhẹ nhàng, nền êm dịu.
 
-### Nhóm 2: Cổng Điều Hướng Chung & Dọn Dẹp Prototype (Navigation & Clean Layout)
-- [ ] Nâng cấp thanh điều hướng chính `apps/web/src/components/Navbar.tsx` (hoặc header layout):
-  - Brand Logo cao cấp "AI Access Gateway • Enterprise Portal" với icon xanh ngọt và kem sang trọng.
-  - Trạng thái hệ thống doanh nghiệp (Enterprise SLA Indicator) thay vì hiển thị tên driver DB.
-  - Dropdown/Avatar người dùng tinh gọn, liên kết nhanh giữa Cổng Nhân Viên, Quản Trị và Tuân Thủ.
-- [ ] Xóa bỏ hoàn toàn khung hiển thị bảng DB `CHI TIẾT BẢN GHI POSTGRESQL` và các banner kỹ thuật.
+### Nhóm 2: Xây Dựng Trang "Hệ Thống Nền Tảng" (`apps/web/src/app/he-thong/page.tsx`)
+- [ ] Thiết kế trang `/he-thong` với bố cục thông thoáng, thanh lịch:
+  - [ ] **Phần 1: Giới thiệu & Triết lý vận hành**: Tại sao doanh nghiệp cần AI Access Gateway? (Quản lý tập trung, tối ưu chi phí bản quyền).
+  - [ ] **Phần 2: Cơ chế hoạt động trực quan**: Minh họa cách tài khoản dùng chung được ủy quyền bảo mật mà không để lộ mật khẩu gốc.
+  - [ ] **Phần 3: Hướng dẫn nhanh cho nhân viên**: 3 bước làm việc (Chọn công cụ -> Khởi chạy an toàn -> Trả ghế khi hoàn tất).
+  - [ ] **Phần 4: Cơ chế tự phục vụ**: Hướng dẫn gửi yêu cầu cấp quyền và cách ban quản trị phê duyệt.
+  - [ ] **Phần 5: Câu hỏi thường gặp (FAQ)**: Giải đáp các băn khoăn về quyền riêng tư, hạn mức sử dụng và xử lý khi hết ghế.
 
-### Nhóm 3: Không Gian Làm Việc Nhân Viên & Danh Mục Self-Service (`apps/web/src/app/page.tsx`)
-- [ ] Xây dựng lại Hero Header Nhân Viên: Tên, avatar, vai trò (`EMPLOYEE` / `ROOT_ADMIN`), phòng ban và chỉ số tóm tắt (Công cụ hoạt động, phiên đang giữ).
-- [ ] Xây dựng khu vực "Không Gian Làm Việc AI Của Bạn" (Active AI Workspace):
-  - Thẻ dịch vụ AI thiết kế Mint & Cream với biểu tượng thương hiệu sắc nét.
-  - Hiển thị tình trạng ghế dùng chung thời gian thực từ Redis (`X/Y slots`).
-  - Nút khởi chạy qua Gateway với animation mượt mà.
-  - Nút "Trả slot (Release)" khi nhân viên đang giữ ghế.
-- [ ] Xây dựng khu vực "Danh Mục Công Cụ Doanh Nghiệp & Yêu Cầu Cấp Quyền" (AI Catalog & Access Request):
-  - Hiển thị các công cụ khả dụng trong công ty.
-  - Thêm Server Action `handleRequestAccess`: Cho phép nhân viên bấm "Yêu cầu cấp quyền", tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs` có ký SHA-256.
+### Nhóm 3: Tinh Gọn Hóa Header & Footer (`apps/web/src/app/layout.tsx`)
+- [ ] Nâng cấp thanh điều hướng:
+  - Thêm liên kết nổi bật tới trang **"Hệ Thống"**.
+  - Đổi tên "Tuân Thủ & WORM" thành **"Nhật Ký Sử Dụng"** (hoặc "Hoạt Động").
+  - Đổi huy hiệu SLA sang ngôn ngữ thân thiện: `Hệ thống ổn định 99.9%`.
+- [ ] Tinh giản Footer: Ngôn từ cô đọng, thanh lịch, liên kết nhanh.
 
-### Nhóm 4: Cổng Quản Trị Doanh Nghiệp Tinh Hoa (`apps/web/src/app/admin/page.tsx`)
-- [ ] Chuyển đổi toàn bộ giao diện Cổng Quản Trị sang hệ thiết kế Mint & Cream:
-  - Bảng tổng quan KPI với thẻ số liệu tương phản cao, đổ bóng nhẹ.
-  - Tab Quản lý Ngân sách phòng ban & Hạn mức chi tiêu.
-  - Tab Kho Mật Mã Bản Quyền Dùng Chung (Shared Vault): Thẻ tài khoản mã hóa AES-256-GCM, số ghế trực tiếp từ Redis, nút xoay vòng mật khẩu và tạm dừng/kích hoạt.
-  - Tab Ma Trận Phân Quyền Nhân Sự: Tìm kiếm, cấp mới quyền AI với thời hạn, thu hồi tức thì.
-  - Nút xuất nhanh báo cáo tuân thủ CSV.
+### Nhóm 4: Tinh Gọn Hóa Không Gian Làm Việc Nhân Viên (`apps/web/src/app/page.tsx`)
+- [ ] Rà soát và loại bỏ toàn bộ từ ngữ đao to búa lớn khỏi Hero Section và màn hình đăng nhập.
+- [ ] Tinh gọn thẻ dịch vụ AI:
+  - Hiển thị rõ ràng: Tên công cụ, Trạng thái (`Sẵn sàng` / `Đang bận: X/Y người dùng`).
+  - Nút bấm trực quan: `Mở công cụ ngay` và `Trả lại chỗ`.
+  - Thông báo nhẹ nhàng khi đầy người: *"Công cụ hiện có đủ người dùng, bạn vui lòng quay lại sau ít phút nhé"*.
+- [ ] Danh mục công cụ yêu cầu cấp quyền: Thiết kế dạng danh sách tối giản, 1-click gửi yêu cầu với lời nhắc thân thiện.
 
-### Nhóm 5: Trung Tâm Tuân Thủ & Phân Tích ROI (`apps/web/src/app/audit/page.tsx`)
-- [ ] Tái thiết kế trang Kiểm toán Tuân thủ:
-  - Chứng nhận WORM Immutability với thiết kế trang trọng, chuẩn mực.
-  - Thước đo toàn vẹn Checksum SHA-256 (100% Verified).
-  - Thẻ tính toán ROI doanh nghiệp (Thời gian tiết kiệm, giá trị kinh tế).
-  - Thanh phân bổ sự kiện màu pastel và bộ lọc sự kiện trực quan.
-  - Nút xuất CSV (RFC 4180) và ISO 27001 / SOC 2 JSON.
+### Nhóm 5: Tinh Gọn Hóa Cổng Quản Trị & Trang Nhật Ký
+- [ ] Trang Quản Trị (`apps/web/src/app/admin/page.tsx`): Dùng từ ngữ nghiệp vụ đời thường (Ngân sách phòng ban, Quản lý tài khoản công ty, Cấp quyền sử dụng).
+- [ ] Trang Nhật Ký (`apps/web/src/app/audit/page.tsx`): Đổi tên thành "Nhật Ký Hoạt Động", trình bày dòng thời gian sự kiện trực quan, dễ hiểu ai đã mở công cụ nào.
 
-### Nhóm 6: Kiểm Chứng Toàn Diện & Nghiệm Thu
+### Nhóm 6: Kiểm Chứng Kỹ Thuật & Đóng Giai Đoạn
 - [ ] Kiểm tra 0 mock: `git grep -i "Mock" apps/web/src/`.
 - [ ] Kiểm tra TypeScript compilation: `npx tsc --noEmit`.
 - [ ] Chạy `npx turbo build` đảm bảo mã thoát 0.
-- [ ] Lập báo cáo nghiệm thu `docs/reports/PHASE-6-IMPLEMENTATION-REPORT.md`.
+- [ ] Đẩy commit và cập nhật báo cáo nghiệm thu.
