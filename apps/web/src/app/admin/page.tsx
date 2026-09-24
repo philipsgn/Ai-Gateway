@@ -2,8 +2,8 @@ import React from "react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { db, employees, grants, departments, vaultCredentials } from "@/db";
-import { desc, eq } from "drizzle-orm";
+import { db, employees, grants, departments, vaultCredentials, accessRequests } from "@/db";
+import { desc, eq, and } from "drizzle-orm";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -361,18 +361,145 @@ export default async function AdminPortalPage() {
     revalidatePath("/");
   }
 
+  // Server Action: Approve Access Request (Phase 9)
+  async function handleApproveRequest(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (currentSession?.user?.role !== "ROOT_ADMIN") {
+      throw new Error("Unauthorized: Only Root Admin can approve requests");
+    }
+
+    const requestId = formData.get("requestId") as string;
+    if (!requestId) return;
+
+    const [req] = await db
+      .select()
+      .from(accessRequests)
+      .where(and(eq(accessRequests.id, requestId), eq(accessRequests.status, "PENDING")))
+      .limit(1);
+
+    if (!req) return;
+
+    // 1. Insert or activate grant
+    const [newGrant] = await db
+      .insert(grants)
+      .values({
+        employeeId: req.employeeId,
+        resourceName: req.resourceName,
+        grantedBy: currentSession.user.email || "ROOT_ADMIN",
+        status: "ACTIVE",
+      })
+      .returning();
+
+    // 2. Update request status to APPROVED
+    await db
+      .update(accessRequests)
+      .set({
+        status: "APPROVED",
+        reviewedBy: currentSession.user.email || "ROOT_ADMIN",
+        reviewedAt: new Date(),
+      })
+      .where(eq(accessRequests.id, requestId));
+
+    // 3. Log audit event
+    await logAuditEvent({
+      actorId: currentSession.user.id || currentSession.user.email,
+      action: "REQUEST_APPROVED",
+      targetId: req.employeeId,
+      metadata: {
+        requestId,
+        grantId: newGrant.id,
+        resourceName: req.resourceName,
+        reviewedBy: currentSession.user.email,
+        approvedAt: new Date().toISOString(),
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  }
+
+  // Server Action: Reject Access Request (Phase 9)
+  async function handleRejectRequest(formData: FormData) {
+    "use server";
+    const currentSession = await auth();
+    if (currentSession?.user?.role !== "ROOT_ADMIN") {
+      throw new Error("Unauthorized: Only Root Admin can reject requests");
+    }
+
+    const requestId = formData.get("requestId") as string;
+    const rejectionReason = (formData.get("rejectionReason") as string)?.trim() || "Chưa phù hợp với nhu cầu công việc hiện tại";
+    if (!requestId) return;
+
+    const [req] = await db
+      .select()
+      .from(accessRequests)
+      .where(and(eq(accessRequests.id, requestId), eq(accessRequests.status, "PENDING")))
+      .limit(1);
+
+    if (!req) return;
+
+    // 1. Update request status to REJECTED
+    await db
+      .update(accessRequests)
+      .set({
+        status: "REJECTED",
+        reviewedBy: currentSession.user.email || "ROOT_ADMIN",
+        reviewedAt: new Date(),
+        rejectionReason,
+      })
+      .where(eq(accessRequests.id, requestId));
+
+    // 2. Log audit event
+    await logAuditEvent({
+      actorId: currentSession.user.id || currentSession.user.email,
+      action: "REQUEST_REJECTED",
+      targetId: req.employeeId,
+      metadata: {
+        requestId,
+        resourceName: req.resourceName,
+        reviewedBy: currentSession.user.email,
+        rejectionReason,
+        rejectedAt: new Date().toISOString(),
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  }
+
   // Fetch real data directly from PostgreSQL & Redis
   let allEmployees: (typeof employees.$inferSelect)[] = [];
   let allGrantsList: any[] = [];
   let allDepartments: (typeof departments.$inferSelect)[] = [];
   let departmentBudgetSummaries: DepartmentBudgetSummary[] = [];
   let allVaultCreds: any[] = [];
+  let allRequestsList: any[] = [];
   let fetchError: string | null = null;
 
   try {
     allEmployees = await db.select().from(employees).orderBy(desc(employees.createdAt));
     allDepartments = await db.select().from(departments).orderBy(departments.name);
     departmentBudgetSummaries = await getAllDepartmentsBudgetStats();
+
+    allRequestsList = await db
+      .select({
+        id: accessRequests.id,
+        employeeId: accessRequests.employeeId,
+        resourceName: accessRequests.resourceName,
+        status: accessRequests.status,
+        reviewedBy: accessRequests.reviewedBy,
+        reviewedAt: accessRequests.reviewedAt,
+        rejectionReason: accessRequests.rejectionReason,
+        createdAt: accessRequests.createdAt,
+        employeeName: employees.name,
+        employeeEmail: employees.email,
+        employeeAvatar: employees.avatarUrl,
+        employeeDeptId: employees.departmentId,
+      })
+      .from(accessRequests)
+      .leftJoin(employees, eq(accessRequests.employeeId, employees.id))
+      .orderBy(desc(accessRequests.createdAt));
 
     const rawVaultCreds = await db.select().from(vaultCredentials).orderBy(desc(vaultCredentials.createdAt));
     allVaultCreds = await Promise.all(
@@ -418,6 +545,9 @@ export default async function AdminPortalPage() {
   const totalCompanySpentUsd = departmentBudgetSummaries.reduce((acc, d) => acc + d.spentUsd, 0);
   const alertDeptsCount = departmentBudgetSummaries.filter((d) => d.status === "WARNING" || d.status === "EXCEEDED").length;
 
+  const pendingRequests = allRequestsList.filter((r) => r.status === "PENDING");
+  const recentProcessedRequests = allRequestsList.filter((r) => r.status !== "PENDING").slice(0, 5);
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
       {/* Top Executive Admin Banner */}
@@ -457,7 +587,7 @@ export default async function AdminPortalPage() {
         </div>
 
         {/* Quick KPI Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-6 border-t border-cream-200">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6 pt-6 border-t border-cream-200">
           <div className="p-3.5 rounded-xl bg-white border border-cream-200 shadow-sm flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-cream-200 text-ink-700 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4" />
@@ -475,6 +605,26 @@ export default async function AdminPortalPage() {
             <div>
               <p className="text-[10px] text-ink-500 font-medium">Quyền ACTIVE</p>
               <p className="text-base font-bold text-mint-600 mt-0.5 font-mono">{activeGrantsCount}</p>
+            </div>
+          </div>
+
+          <div className={`p-3.5 rounded-xl border shadow-sm flex items-center gap-3 ${
+            pendingRequests.length > 0
+              ? "bg-amber-50/70 border-amber-300"
+              : "bg-white border-cream-200"
+          }`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+              pendingRequests.length > 0 ? "bg-amber-500 text-white shadow-sm" : "bg-cream-100 text-ink-500"
+            }`}>
+              <Clock className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-ink-500 font-medium">Chờ duyệt</p>
+              <p className={`text-base font-bold mt-0.5 font-mono ${
+                pendingRequests.length > 0 ? "text-amber-800" : "text-ink-600"
+              }`}>
+                {pendingRequests.length}
+              </p>
             </div>
           </div>
 
@@ -549,6 +699,177 @@ export default async function AdminPortalPage() {
           Lỗi truy vấn cơ sở dữ liệu: {fetchError}
         </div>
       )}
+
+      {/* ==================== SECTION: ACCESS REQUESTS QUEUE (PHASE 9) ==================== */}
+      <div className="card-cream p-6 sm:p-8 bg-white space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-ink-900">Hàng Đợi Yêu Cầu Cấp Quyền (Access Requests Queue)</h2>
+                {pendingRequests.length > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                    {pendingRequests.length} chờ duyệt
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-mint-50 text-mint-700 border border-mint-200">
+                    Đã xử lý hết
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-ink-500">Phê duyệt hoặc từ chối các yêu cầu xin cấp quyền sử dụng công cụ AI từ nhân viên</p>
+            </div>
+          </div>
+          <span className="text-xs font-mono text-ink-600 bg-cream-100 px-3 py-1 rounded-lg border border-cream-300 font-semibold">
+            {allRequestsList.length} tổng yêu cầu
+          </span>
+        </div>
+
+        {/* Pending Requests Cards */}
+        {pendingRequests.length === 0 ? (
+          <div className="p-8 rounded-2xl bg-cream-50/70 border border-cream-200 text-center space-y-2">
+            <CheckCircle2 className="w-8 h-8 text-mint-600 mx-auto" />
+            <p className="text-sm font-semibold text-ink-800">Không có yêu cầu nào đang chờ xử lý</p>
+            <p className="text-xs text-ink-500">
+              Khi nhân viên bấm "Yêu Cầu Cấp Quyền" từ Không Gian Làm Việc, đơn sẽ tự động xuất hiện tại đây để bạn phê duyệt 1-click.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingRequests.map((req) => {
+              const dept = allDepartments.find((d) => d.id === req.employeeDeptId);
+              return (
+                <div
+                  key={req.id}
+                  className="p-5 rounded-2xl bg-cream-50/50 border border-amber-200/80 hover:border-amber-300 transition-all flex flex-col justify-between space-y-4 shadow-sm"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {req.employeeAvatar ? (
+                          <img
+                            src={req.employeeAvatar}
+                            alt={req.employeeName || "User"}
+                            className="w-10 h-10 rounded-xl object-cover border border-cream-300 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-sm">
+                            {(req.employeeName || "U")[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-bold text-sm text-ink-900 leading-tight">
+                            {req.employeeName || "Nhân viên"}
+                          </p>
+                          <p className="text-[11px] text-ink-500 font-mono mt-0.5">{req.employeeEmail}</p>
+                        </div>
+                      </div>
+
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                        CHỜ DUYỆT
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white border border-cream-200 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-ink-500">Công cụ xin cấp:</span>
+                        <span className="font-bold text-mint-800 bg-mint-50 px-2 py-0.5 rounded border border-mint-200">
+                          {req.resourceName}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-ink-500">Phòng ban:</span>
+                        <span className="font-medium text-ink-700">
+                          {dept ? `${dept.name} (${dept.code})` : "Chưa phân bổ"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-ink-400">Thời gian gửi:</span>
+                        <span className="text-ink-600 font-mono">
+                          {new Date(req.createdAt).toLocaleString("vi-VN")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions: Approve & Reject */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-cream-200">
+                    <form action={handleApproveRequest}>
+                      <input type="hidden" name="requestId" value={req.id} />
+                      <button
+                        type="submit"
+                        className="w-full py-2 px-3 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-xs font-semibold shadow-mint flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Phê Duyệt</span>
+                      </button>
+                    </form>
+
+                    <form action={handleRejectRequest}>
+                      <input type="hidden" name="requestId" value={req.id} />
+                      <button
+                        type="submit"
+                        className="w-full py-2 px-3 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Từ Chối</span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Recently Processed Requests Log (Summary) */}
+        {recentProcessedRequests.length > 0 && (
+          <div className="pt-4 border-t border-cream-200">
+            <h3 className="text-xs font-bold text-ink-700 uppercase tracking-wider mb-3">
+              Yêu cầu đã xử lý gần đây
+            </h3>
+            <div className="space-y-2">
+              {recentProcessedRequests.map((req) => (
+                <div
+                  key={req.id}
+                  className="p-3 rounded-xl bg-white border border-cream-200 flex items-center justify-between text-xs gap-3"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        req.status === "APPROVED" ? "bg-mint-500" : "bg-rose-500"
+                      }`}
+                    />
+                    <div>
+                      <span className="font-semibold text-ink-800">{req.employeeName || req.employeeEmail}</span>{" "}
+                      <span className="text-ink-500">yêu cầu</span>{" "}
+                      <strong className="text-ink-900">{req.resourceName}</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        req.status === "APPROVED"
+                          ? "bg-mint-50 text-mint-700 border border-mint-200"
+                          : "bg-rose-50 text-rose-700 border border-rose-200"
+                      }`}
+                    >
+                      {req.status === "APPROVED" ? "ĐÃ PHÊ DUYỆT" : "ĐÃ TỪ CHỐI"}
+                    </span>
+                    <span className="text-[11px] text-ink-400 font-mono hidden sm:inline">
+                      {req.reviewedAt ? new Date(req.reviewedAt).toLocaleDateString("vi-VN") : ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ==================== SECTION: DEPARTMENT & BUDGET GOVERNANCE ==================== */}
       <div className="card-cream p-6 sm:p-8 bg-white space-y-6">

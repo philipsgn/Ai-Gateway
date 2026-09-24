@@ -55,6 +55,17 @@ export const vaultCredentials = pgTable("vault_credentials", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const accessRequests = pgTable("access_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  employeeId: uuid("employee_id").references(() => employees.id, { onDelete: "cascade" }).notNull(),
+  resourceName: varchar("resource_name", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("PENDING"), // PENDING, APPROVED, REJECTED
+  reviewedBy: varchar("reviewed_by", { length: 255 }),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Department = typeof departments.$inferSelect;
 export type NewDepartment = typeof departments.$inferInsert;
 export type Employee = typeof employees.$inferSelect;
@@ -65,5 +76,7 @@ export type Grant = typeof grants.$inferSelect;
 export type NewGrant = typeof grants.$inferInsert;
 export type VaultCredential = typeof vaultCredentials.$inferSelect;
 export type NewVaultCredential = typeof vaultCredentials.$inferInsert;
+export type AccessRequest = typeof accessRequests.$inferSelect;
+export type NewAccessRequest = typeof accessRequests.$inferInsert;
 
 

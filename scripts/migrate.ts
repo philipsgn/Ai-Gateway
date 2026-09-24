@@ -149,7 +149,22 @@ async function runMigration() {
     `);
     console.log("  ✓ Table 'vault_credentials' verified / created.");
 
-    // 7. Create indexes
+    // 7. Create access_requests table (Phase 9)
+    await sql.unsafe(`
+      CREATE TABLE IF NOT EXISTS access_requests (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        resource_name VARCHAR(255) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+        reviewed_by VARCHAR(255),
+        reviewed_at TIMESTAMPTZ,
+        rejection_reason TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log("  ✓ Table 'access_requests' verified / created.");
+
+    // 8. Create indexes
     await sql.unsafe(`
       CREATE INDEX IF NOT EXISTS idx_departments_code ON departments(code);
       CREATE INDEX IF NOT EXISTS idx_employees_google_sub ON employees(google_sub);
@@ -159,6 +174,9 @@ async function runMigration() {
       CREATE INDEX IF NOT EXISTS idx_grants_status ON grants(status);
       CREATE INDEX IF NOT EXISTS idx_vault_credentials_resource ON vault_credentials(resource_name);
       CREATE INDEX IF NOT EXISTS idx_vault_credentials_status ON vault_credentials(status);
+      CREATE INDEX IF NOT EXISTS idx_access_requests_employee ON access_requests(employee_id);
+      CREATE INDEX IF NOT EXISTS idx_access_requests_status ON access_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_access_requests_created_at ON access_requests(created_at DESC);
     `);
     console.log("  ✓ Indexes verified / created.");
 

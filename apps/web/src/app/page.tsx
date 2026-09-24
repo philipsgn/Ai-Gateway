@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth, signIn, signOut } from "@/auth";
-import { db, employees, grants, departments, vaultCredentials } from "@/db";
+import { db, employees, grants, departments, vaultCredentials, accessRequests } from "@/db";
 import { eq, and, desc } from "drizzle-orm";
 import { checkLoginRateLimit } from "@/lib/redis";
 import { logAuditEvent } from "@/lib/audit";
@@ -120,20 +120,51 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       }
     }
 
-    // Normal employee: Request review
-    await logAuditEvent({
-      actorId: currentSession.user.id || currentSession.user.email,
-      action: "ACCESS_REQUESTED",
-      targetId: resourceName,
-      metadata: {
-        resourceName,
-        employeeEmail: currentSession.user.email,
-        employeeName: currentSession.user.name,
-        requestedAt: new Date().toISOString(),
-        status: "PENDING_REVIEW",
-      },
-    });
+    // Normal employee: Insert into accessRequests table + logAuditEvent
+    const [emp] = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.email, currentSession.user.email.toLowerCase().trim()))
+      .limit(1);
 
+    if (emp) {
+      // Check if already pending
+      const [existingPending] = await db
+        .select()
+        .from(accessRequests)
+        .where(
+          and(
+            eq(accessRequests.employeeId, emp.id),
+            eq(accessRequests.resourceName, resourceName),
+            eq(accessRequests.status, "PENDING")
+          )
+        )
+        .limit(1);
+
+      if (!existingPending) {
+        await db.insert(accessRequests).values({
+          employeeId: emp.id,
+          resourceName,
+          status: "PENDING",
+        });
+
+        await logAuditEvent({
+          actorId: emp.id,
+          action: "ACCESS_REQUESTED",
+          targetId: resourceName,
+          metadata: {
+            resourceName,
+            employeeEmail: currentSession.user.email,
+            employeeName: currentSession.user.name,
+            requestedAt: new Date().toISOString(),
+            status: "PENDING_REVIEW",
+          },
+        });
+      }
+    }
+
+    revalidatePath("/");
+    revalidatePath("/admin");
     redirect(`/?success=request_submitted&tool=${encodeURIComponent(resourceName)}`);
   }
 
@@ -188,6 +219,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // ---------------------------------------------------------------------------
   let userGrants: (typeof grants.$inferSelect)[] = [];
   let userGrantsWithVault: any[] = [];
+  let pendingToolNames = new Set<string>();
   let employeeDept: typeof departments.$inferSelect | null = null;
   let deptBudgetStats: DepartmentBudgetSummary | null = null;
 
@@ -245,6 +277,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           deptBudgetStats = await getDepartmentBudgetStats(d.id, d);
         }
       }
+      // Query pending access requests
+      const pendingReqs = await db
+        .select()
+        .from(accessRequests)
+        .where(
+          and(
+            eq(accessRequests.employeeId, dbEmployee.id),
+            eq(accessRequests.status, "PENDING")
+          )
+        );
+      pendingToolNames = new Set(pendingReqs.map((r) => r.resourceName));
     } catch (err: any) {
       console.error("[PostgreSQL] Error querying grants/department:", err);
     }
@@ -781,9 +824,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       <p className="text-xs text-ink-600 leading-relaxed line-clamp-2">{tool.description}</p>
                     </div>
 
-                    <form action={handleRequestAccess} className="pt-2">
-                      <input type="hidden" name="resourceName" value={tool.name} />
-                      {dbEmployee?.role === "ROOT_ADMIN" ? (
+                    {dbEmployee?.role === "ROOT_ADMIN" ? (
+                      <form action={handleRequestAccess} className="pt-2">
+                        <input type="hidden" name="resourceName" value={tool.name} />
                         <button
                           type="submit"
                           className="w-full py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold border border-amber-300 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
@@ -792,7 +835,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
                           <span>Kích Hoạt Cho Tôi</span>
                         </button>
-                      ) : (
+                      </form>
+                    ) : pendingToolNames.has(tool.name) ? (
+                      <div className="pt-2">
+                        <div
+                          className="w-full py-2 px-3 rounded-xl bg-amber-50/90 text-amber-800 text-xs font-semibold border border-amber-200 shadow-sm flex items-center justify-center gap-1.5 cursor-default"
+                          title="Yêu cầu của bạn đang chờ Quản trị viên phê duyệt"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Đang Chờ Quản Trị Duyệt</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <form action={handleRequestAccess} className="pt-2">
+                        <input type="hidden" name="resourceName" value={tool.name} />
                         <button
                           type="submit"
                           className="w-full py-2 px-3 rounded-xl bg-white hover:bg-cream-100 text-mint-800 text-xs font-semibold border border-mint-300 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
@@ -800,8 +856,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           <Send className="w-3.5 h-3.5 text-mint-600" />
                           <span>Yêu Cầu Cấp Quyền</span>
                         </button>
-                      )}
-                    </form>
+                      </form>
+                    )}
                   </div>
                 ))}
               </div>

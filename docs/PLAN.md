@@ -29,6 +29,9 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 | **6** | **Enterprise Production Transformation & Mint-Cream UI/UX Overhaul**<br/>*Chuyển đổi toàn diện sản phẩm thành bản Production thương mại: Áp dụng hệ thiết kế Mint & Cream cao cấp, loại bỏ hoàn toàn các khung debug/sandbox, hoàn thiện trải nghiệm yêu cầu cấp quyền và tối ưu luồng người dùng.* | ✅ **Hoàn thành** | Đã nghiệm thu hệ thiết kế Mint & Cream, xóa bỏ debug panel, build thành công và xuất báo cáo nghiệm thu Phase 6. |
 | **7** | **Human-Centric UI/UX Simplification & Interactive Platform Guide**<br/>*Tối giản hóa toàn diện ngôn ngữ và giao diện: Chuyển toàn bộ thuật ngữ chuyên ngành rườm rà vào trang "Hệ Thống Nền Tảng" riêng biệt; tinh gọn các trang chính theo phong cách tông màu trầm dịu nhẹ, chuẩn Production dễ dùng cho mọi nhân viên.* | ✅ **Hoàn thành** | Đã nghiệm thu trang /he-thong, loại bỏ thuật ngữ hardcore, tối ưu màu trầm dịu mắt và build thành công. |
 | **8** | **Production Shared License Pool & Dynamic Vault Activation Engine**<br/>*Chuẩn hóa cơ chế mua và chia sẻ bản quyền AI doanh nghiệp: Phân tách rõ vòng đời kích hoạt Vault (Chờ Admin nạp bản quyền vs Sẵn sàng vs Đầy ghế); bổ sung cơ chế 1-click Self-Grant cho Root Admin; chuẩn hóa hiển thị phân quyền và cập nhật đồng bộ cẩm nang /he-thong.* | ✅ **Hoàn thành** | Đã nghiệm thu mô hình Shared License Pool, cơ chế Self-Grant của Root Admin, cập nhật /he-thong, nâng cấp thẻ công cụ và build thành công. |
+| **9** | **Interactive Access Request & Approval Workflow**<br/>*Quy trình phê duyệt yêu cầu cấp quyền tương tác: Xây dựng hàng đợi duyệt đơn tập trung tại Cổng Quản Trị, cho phép Admin duyệt 1-click hoặc từ chối yêu cầu; tự động tạo grant trong PostgreSQL và cập nhật trạng thái thời gian thực.* | ✅ **Hoàn thành** | Đã nghiệm thu bảng access_requests trên Neon PostgreSQL, hàng đợi phê duyệt tại /admin, chống gửi trùng lặp và build thành công. |
+| **10** | **In-App Secure Launchpad & Credential Delivery**<br/>*Bàn giao mật khẩu phiên làm việc an toàn cho nhân viên.* | ⏳ **Chưa mở** | Hoàn thành và nghiệm thu Phase 9. |
+| **11** | **Dynamic AI Catalog & Custom SaaS Integrations**<br/>*Quản lý danh mục AI động và tích hợp SaaS tùy biến.* | ⏳ **Chưa mở** | Hoàn thành và nghiệm thu Phase 10. |
 
 ---
 
@@ -79,6 +82,12 @@ Nền tảng hướng đến giải quyết trọn vẹn 4 trụ cột quản tr
 - **Cột mốc M8.2 (Visual Vault Activation Lifecycle):** Nâng cấp giao diện hiển thị thẻ công cụ AI: Thể hiện rõ 3 trạng thái thực tế: (1) Chưa kích hoạt / Chờ Admin kết nối, (2) Đã kích hoạt & Sẵn sàng (X/Y ghế), (3) Đang bận (X/X ghế).
 - **Cột mốc M8.3 (Interactive Educational Guide Update):** Cập nhật trang `/he-thong` bổ sung sơ đồ trực quan và hướng dẫn chi tiết cho Admin và Nhân viên về cách thức kết nối tài khoản bản quyền.
 - **Cột mốc M8.4 (Root Admin Instant Self-Grant & Assigned-Tools Clarity):** Chuẩn hóa trải nghiệm phân quyền cho Quản trị viên và người dùng: (1) Cung cấp cơ chế kích hoạt tức thì 1 chạm ("⚡ Kích Hoạt Cho Tôi") cho Root Admin trên Catalog mà không cần gửi đơn xin phê duyệt; (2) Phân định rành mạch tiêu đề "Công Cụ Được Cấp Quyền Của Bạn" thay vì gộp chung là "sẵn sàng làm việc", hiển thị chính xác trạng thái SẴN SÀNG (đã kết nối Vault) vs CHỜ KẾT NỐI (chờ nạp Vault); (3) Xác thực tính minh bạch của dữ liệu Vault chạy thật 100% trên PostgreSQL thay vì hardcode.
+
+### Phase 9: Interactive Access Request & Approval Workflow (✅ Hoàn thành)
+> *Báo cáo nghiệm thu chi tiết: Xem tại [docs/reports/PHASE-9-IMPLEMENTATION-REPORT.md](./reports/PHASE-9-IMPLEMENTATION-REPORT.md).*
+- **Cột mốc M9.1 (Access Requests Table & Schema):** Tạo bảng `access_requests` trên Neon PostgreSQL liên kết nhân viên và tài nguyên AI, hỗ trợ các trạng thái `PENDING`, `APPROVED`, `REJECTED`.
+- **Cột mốc M9.2 (Self-Service Status & Duplicate Guard):** Thẻ công cụ của nhân viên hiển thị nhãn `Đang Chờ Quản Trị Duyệt`, chống gửi đơn trùng lặp và ghi audit log `ACCESS_REQUESTED`.
+- **Cột mốc M9.3 (Admin Approval Queue & 1-Click Provisioning):** Xây dựng hàng đợi duyệt đơn tập trung tại `/admin`: Cho phép Quản trị viên duyệt 1 chạm (tự động tạo grant trong `grants`, chuyển trạng thái `APPROVED`, ghi log `REQUEST_APPROVED`) hoặc từ chối (`REJECTED`).
 
 ---
 
