@@ -40,12 +40,18 @@ Mỗi khi nhận một yêu cầu (prompt) mới từ người dùng, Agent ph�
    - TUYỆT ĐỐI KHÔNG cập nhật lại hoặc viết lặp lại các nội dung, task, giải thích, hay cột mốc đã có sẵn trong tài liệu.
    - Chỉ bổ sung những thông tin mới, thay đổi mới phát sinh hoặc cập nhật tiến độ thực tế để giữ tài liệu luôn tinh gọn, sắc bén và chuẩn xác.
 
-## Quy trình khi hoàn thành 1 phase
+## Tuân thủ Workflows (.agents/workflows/)
 
-1. Đổi tên `PHASE.md` hiện tại thành `docs/phases/PHASE-N-IMPLEMENTATION-REPORT.md`.
-2. Cập nhật `PLAN.md`: đánh dấu phase vừa xong là ✅, phase kế tiếp là 🚧.
-3. Tạo `PHASE.md` mới cho phase kế tiếp — chỉ sau khi người dùng xác nhận phạm vi.
-4. Đề xuất người dùng chạy: `git add -A && git commit -m "..." && git tag phase-N-done`.
+1. **Khi bắt đầu một phase mới:** Bắt buộc tuân thủ `.agents/workflows/start-phase.md`:
+   - Sinh artifact `implementation_plan.md` và file `task.md` ở root workspace dựa đúng theo task breakdown trong `PHASE.md`.
+   - DỪNG LẠI chờ người dùng review và duyệt `implementation_plan.md` trước khi viết bất kỳ dòng code nào.
+2. **Khi hoàn thành một phase:** Bắt buộc tuân thủ `.agents/workflows/close-phase.md`:
+   - Kiểm chứng từng mục Definition of Done bằng output lệnh thật.
+   - Tổng hợp toàn bộ bằng chứng vào artifact `walkthrough.md`.
+   - Đổi tên `PHASE.md` hiện tại thành `docs/phases/PHASE-N-IMPLEMENTATION-REPORT.md` (hoặc `docs/reports/PHASE-N-IMPLEMENTATION-REPORT.md`).
+   - Cập nhật `PLAN.md`: đánh dấu phase vừa xong là ✅, phase kế tiếp là 🚧.
+   - Tạo `PHASE.md` mới cho phase kế tiếp — chỉ sau khi người dùng xác nhận phạm vi.
+   - Đề xuất các lệnh git cho người dùng hoặc thực hiện theo thỏa thuận.
 
 ## Khi không chắc chắn
 
