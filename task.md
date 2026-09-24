@@ -16,15 +16,15 @@ Tài liệu theo dõi tiến độ nhiệm vụ cho Phase 6, bám sát 100% phâ
 - [x] Xóa bỏ hoàn toàn khung hiển thị bảng DB `CHI TIẾT BẢN GHI POSTGRESQL` và các banner kỹ thuật
 
 ## Nhóm 3: Không Gian Làm Việc Nhân Viên & Danh Mục Self-Service (`apps/web/src/app/page.tsx`)
-- [ ] Xây dựng lại Hero Header Nhân Viên: Tên, avatar, vai trò (`EMPLOYEE` / `ROOT_ADMIN`), phòng ban và chỉ số tóm tắt (Công cụ hoạt động, phiên đang giữ)
-- [ ] Xây dựng khu vực "Không Gian Làm Việc AI Của Bạn" (Active AI Workspace):
-  - Thẻ dịch vụ AI thiết kế Mint & Cream với biểu tượng thương hiệu sắc nét
-  - Hiển thị tình trạng ghế dùng chung thời gian thực từ Redis (`X/Y slots`)
-  - Nút khởi chạy qua Gateway với animation mượt mà
-  - Nút "Trả slot (Release)" khi nhân viên đang giữ ghế
-- [ ] Xây dựng khu vực "Danh Mục Công Cụ Doanh Nghiệp & Yêu Cầu Cấp Quyền" (AI Catalog & Access Request):
-  - Hiển thị các công cụ khả dụng trong công ty
-  - Thêm Server Action `handleRequestAccess`: Cho phép nhân viên bấm "Yêu cầu cấp quyền", tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs` có ký SHA-256
+- [x] Xây dựng lại Hero Header Nhân Viên: Tên, avatar, vai trò (`EMPLOYEE` / `ROOT_ADMIN`), phòng ban và chỉ số tóm tắt (Công cụ hoạt động, phiên đang giữ)
+- [x] Xây dựng khu vực "Không Gian Làm Việc AI Của Bạn" (Active AI Workspace):
+  - [x] Thẻ dịch vụ AI thiết kế Mint & Cream với biểu tượng thương hiệu sắc nét
+  - [x] Hiển thị tình trạng ghế dùng chung thời gian thực từ Redis (`X/Y slots`)
+  - [x] Nút khởi chạy qua Gateway với animation mượt mà
+  - [x] Nút "Trả slot (Release)" khi nhân viên đang giữ ghế
+- [x] Xây dựng khu vực "Danh Mục Công Cụ Doanh Nghiệp & Yêu Cầu Cấp Quyền" (AI Catalog & Access Request):
+  - [x] Hiển thị các công cụ khả dụng trong công ty
+  - [x] Thêm Server Action `handleRequestAccess`: Cho phép nhân viên bấm "Yêu cầu cấp quyền", tự động ghi nhận sự kiện `ACCESS_REQUESTED` vào `audit_logs` có ký SHA-256
 
 ## Nhóm 4: Cổng Quản Trị Doanh Nghiệp Tinh Hoa (`apps/web/src/app/admin/page.tsx`)
 - [ ] Chuyển đổi toàn bộ giao diện Cổng Quản Trị sang hệ thiết kế Mint & Cream:

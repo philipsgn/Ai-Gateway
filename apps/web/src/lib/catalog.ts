@@ -79,3 +79,8 @@ export function getResourceDetails(name: string): ResourceInfo {
   );
 }
 
+export function getAllResources(): ResourceInfo[] {
+  return Object.values(RESOURCE_CATALOG);
+}
+
+
